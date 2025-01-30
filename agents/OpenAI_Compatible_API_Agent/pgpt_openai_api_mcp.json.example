@@ -1,0 +1,12 @@
+{
+    "server_ip": "xxx.xxx.xxx.xxx",
+    "server_port": 5000,
+    "email": "anonym@example.com",
+    "password": "********",
+    "groups": ["BUND Gesetzentwurf"],
+    "language": "en",
+    "api_ip": "0.0.0.0",
+    "api_port": 8002,
+    "whitelist_keys": []
+}
+
