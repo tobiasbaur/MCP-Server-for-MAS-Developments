@@ -155,8 +155,11 @@ class PrivateGPTAPI:
 
 
         result = self.query_private_gpt(user_input)
-        if 'data' in result:
 
+
+        if 'data' in result:
+            if request_tools is not None:
+                result.data.function = "test"
             return result['data']
         elif 'error' in result:
             # Try to login again and send the query once more on error.

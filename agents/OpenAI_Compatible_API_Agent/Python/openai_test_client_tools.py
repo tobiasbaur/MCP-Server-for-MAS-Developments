@@ -84,4 +84,5 @@ if __name__ == "__main__":
         }
     )
 
-    print(completion.choices[0].message.tool_calls[0].function.parsed_arguments)
+    print(completion.choices[0].message)
+    #print(completion.choices[0].message.tool_calls[0].function.parsed_arguments)
