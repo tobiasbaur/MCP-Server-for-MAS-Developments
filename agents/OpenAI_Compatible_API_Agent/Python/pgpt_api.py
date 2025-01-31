@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import requests
@@ -130,9 +131,9 @@ class PrivateGPTAPI:
                 return data
             except:
                 print(f"❌ Failed to get response: {e}")
-                return {}
+                return {"error": f"❌ Failed to get response: {e}"}
 
-    def respond_with_context(self, messages):
+    def respond_with_context(self, messages, response_format):
         user_input = f'{messages[len(messages) - 1].content}'
         print(f"💁 Request: {messages[len(messages) - 1].content}")
 
@@ -144,11 +145,30 @@ class PrivateGPTAPI:
             for message in messages:
                 user_input += f"{message.role}: {message.content}\n"
 
+        if response_format is not None:
+            user_input += add_response_format(response_format)
+
+
         result = self.query_private_gpt(user_input)
         if 'data' in result:
             return result['data']
+        elif 'error' in result:
+            # Try to login again and send the query once more on error.
+            if self.login():
+                if self.create_chat():
+                    result = self.query_private_gpt(user_input)
+                    if 'data' in result:
+                        return result['data']
+                    else:
+                        return result
+
         else:
             return result
+
+def add_response_format(response_format):
+    prompt = "\nPlease fill in the following JSON template with realistic and appropriate information. In your reply, only return the generated json\n"
+    prompt += json.dumps(response_format)
+    return prompt
 
 
 def decrypt_api_key(api_key):

@@ -1,5 +1,6 @@
 import asyncio
 import json
+import re
 import time
 
 import tiktoken
@@ -25,9 +26,10 @@ class Message(BaseModel):
 class ChatCompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     messages: List[Message]
-    max_tokens: Optional[int] = 2048
-    temperature: Optional[float] = 0.1
+    max_tokens: Optional[int] = 600000
+    temperature: Optional[float] = 0 #Not used atm
     stream: Optional[bool] = False
+    response_format: Optional[object] = None
 
 
 def num_tokens(user_input, answer):
@@ -117,3 +119,5 @@ def get_models():
             }
         ]
     }
+
+

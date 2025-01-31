@@ -68,9 +68,8 @@ async def chat_completions(request: ChatCompletionRequest):
             instances.append(instance)
 
         print(f"💁 Request: {request.messages[len(request.messages) - 1].content}")
-        response = pgpt.respond_with_context(request.messages)
-        if "answer" not in response:
-            response["answer"] = "No Response received"
+        response = pgpt.respond_with_context(request.messages, request.response_format)
+
 
     else:
         response = {
