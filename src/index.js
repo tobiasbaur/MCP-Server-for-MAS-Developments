@@ -318,7 +318,9 @@ const allFunctions = [
   { name: 'List Sources', enabled: enableListSources },
   { name: 'Store User', enabled: enableStoreUser },
   { name: 'Edit User', enabled: enableEditUser },
-  { name: 'Delete User', enabled: enableDeleteUser }
+  { name: 'Delete User', enabled: enableDeleteUser },
+  // { name: 'Open AI compatible API Chat', enabled: enableChat },
+  { name: 'Continue Chat', enabled: enableContinueChat },
 ];
 
 // Filtern, um nur deaktivierte (false) zu bekommen
@@ -1139,7 +1141,7 @@ class PrivateGPTServer {
                 }
             },
 			{   /* 6.0 pen AI compatible API Chat ######################################################################################*/
-                name: 'oai_comp_api_chat',
+                name: 'oai_chat',
                 description: 'Start or continue a chat with PrivateGPT with optional RAG capabilities',
                 inputSchema: {
                     type: 'object',
@@ -2041,7 +2043,7 @@ class PrivateGPTServer {
                         }
                     }
                    /* 6.0 OpenAPI Compatible API Chat #######################################################################################*/
-                    case 'oai_comp_api_chat': {
+                    case 'oai_chat': {
                         const disabledResponse = checkToolEnabled('oai_comp_api');
                         if (disabledResponse) return disabledResponse;
 
@@ -3114,7 +3116,7 @@ async run() {
 					}
 				}
 				/* 6.0 Open AI compatible API Chat #######################################################################################*/
-                case 'oai_comp_api_chat': {
+                case 'oai_chat': {
                     const disabledResponse = checkToolEnabled('oai_comp_api');
                     if (disabledResponse) return disabledResponse;
 
