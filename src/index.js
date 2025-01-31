@@ -2075,7 +2075,7 @@ class PrivateGPTServer {
 
                         try {
                             // Loggen der Chat-Anfrage
-                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+                            if (!isanonymousModeEnabled) logEvent('oaichat', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
                                 .replace('${question}', question)
                                 .replace('${usePublic}', usePublic)
                                 .replace('${groups}', JSON.stringify(groups))
@@ -2336,17 +2336,17 @@ async run() {
                     if (disabledResponse) return disabledResponse;
 
                     const { token, arguments: args } = message;
-                    if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chat, t.extractedToken.replace('${token}', token), 'info');
+                    if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chat, t.extractedToken.replace('${token}', token), 'info');
 
                     // Token prüfen und validieren
                     if (!token) {
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatError, t.noTokenError, 'error');
                         return { status: 'E20-M-2000', message: t.missingTokenError };
                     }
 
                     // Argument-Validierung
                     if (!args || !args.question) {
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
                         return {
                             status: 'error',
                             message: t.missingArgumentsError.replace('${args}', JSON.stringify(args)),
@@ -2357,13 +2357,13 @@ async run() {
 
                     // Konflikt zwischen `usePublic` und `groups` lösen
                     if (usePublic && groups && groups.length > 0) {
-                        if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
+                        if (!isanonymousModeEnabled) logEvent('system', 'swmsg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
                         args.usePublic = false;
                     }
 
                     try {
                         // Loggen der Chat-Anfrage
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatRequest, t.sendingChatRequest
                             .replace('${question}', question)
                             .replace('${usePublic}', usePublic)
                             .replace('${groups}', JSON.stringify(groups))
@@ -2382,7 +2382,7 @@ async run() {
 
                         const data = response.data?.data || {};
                         // Loggen der erfolgreichen Chat-Antwort
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
 
                         // Erfolgsantwort mit Status und Daten
                         return {
@@ -2397,7 +2397,7 @@ async run() {
                     } catch (error) {
                         const chatApiErrorMessage = error.message || error.response?.data;
                         // Loggen des Fehlers bei der Chat-API-Anfrage
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatApiError, t.chatApiError.replace('${error}', chatApiErrorMessage), 'error');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatApiError, t.chatApiError.replace('${error}', chatApiErrorMessage), 'error');
 
                         // Fehlerantwort mit Status und Nachricht
                         return {
@@ -3121,17 +3121,17 @@ async run() {
                     if (disabledResponse) return disabledResponse;
 
                     const { token, arguments: args } = message;
-                    if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chat, t.extractedToken.replace('${token}', token), 'info');
+                    if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chat, t.extractedToken.replace('${token}', token), 'info');
 
                     // Token prüfen und validieren
                     if (!token) {
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatError, t.noTokenError, 'error');
                         return { status: 'E60-M-6000', message: t.missingTokenError };
                     }
 
                     // Argument-Validierung
                     if (!args || !args.question) {
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
                         return {
                             status: 'error',
                             message: t.missingArgumentsError.replace('${args}', JSON.stringify(args)),
@@ -3142,13 +3142,13 @@ async run() {
 
 					// Konflikt zwischen `usePublic` und `groups` lösen
 					if (usePublic && groups && groups.length > 0) {
-						if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
+						if (!isanonymousModeEnabled) logEvent('system', 'swmsg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
 						args.usePublic = false;
 					}
 
 					try {
 						// Loggen der Chat-Anfrage
-						if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+						if (!isanonymousModeEnabled) logEvent('server', 'oamsg', l.prefix_chatRequest, t.sendingChatRequest
 							.replace('${question}', question)
 							.replace('${usePublic}', usePublic)
 							.replace('${groups}', JSON.stringify(groups))
@@ -3167,7 +3167,7 @@ async run() {
 
                         const data = response.data?.data || {};
                         // Loggen der erfolgreichen Chat-Antwort
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
 
                         // Erfolgsantwort mit Status und Daten
                         return {
@@ -3182,7 +3182,7 @@ async run() {
                     } catch (error) {
                         const chatApiErrorMessage = error.message || error.response?.data;
                         // Loggen des Fehlers bei der Chat-API-Anfrage
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatApiError, t.chatApiError.replace('${error}', chatApiErrorMessage), 'error');
+                        if (!isanonymousModeEnabled) logEvent('server', 'swmsg', l.prefix_chatApiError, t.chatApiError.replace('${error}', chatApiErrorMessage), 'error');
 
                         // Fehlerantwort mit Status und Nachricht
                         return {
