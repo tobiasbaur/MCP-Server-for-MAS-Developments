@@ -2094,7 +2094,7 @@ class PrivateGPTServer {
 
                             const data = response.data?.data || {};
                             // Loggen der erfolgreichen Chat-Antwort
-                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
+                            if (!isanonymousModeEnabled) logEvent('server', 'oareg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
 
                             // Erfolgsantwort mit Status und Daten
                             return {
@@ -2141,7 +2141,7 @@ class PrivateGPTServer {
                                 question: question,
                             });
                             // Loggen der erfolgreichen Fortsetzung der Konversation
-                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_continue_chatSuccess, t.conversationSuccess.replace('${data}', JSON.stringify(continueChatResponse.data, null, 2)), 'info');
+                            if (!isanonymousModeEnabled) logEvent('server', 'oareg', l.prefix_continue_chatSuccess, t.conversationSuccess.replace('${data}', JSON.stringify(continueChatResponse.data, null, 2)), 'info');
                             return {
                                 content: {
                                     chatId:  continueChatResponse.data.data.chatId,
@@ -3226,7 +3226,7 @@ async run() {
 						};
 					} catch (error) {
 						// Loggen des Fehlers bei der Continue-Chat-API-Anfrage
-						if (!isanonymousModeEnabled) logEvent('client', 'swmsg', l.prefix_apiRequestError, t.apiRequestError.replace('${error}', error.message), 'error');
+						if (!isanonymousModeEnabled) logEvent('client', 'oamsg', l.prefix_apiRequestError, t.apiRequestError.replace('${error}', error.message), 'error');
 						return {
 							status: 'E61-M-6151',
 							message: error.response?.data?.message || error.message || t.noErrorMessage,
