@@ -27,7 +27,7 @@ class Message(BaseModel):
 class ChatCompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     messages: List[Message]
-    max_tokens: Optional[int] = 60000
+    max_tokens: Optional[int] = 64000
     temperature: Optional[float] = 0 #Not used atm
     stream: Optional[bool] = False
     response_format: Optional[object] = None
