@@ -1137,6 +1137,36 @@ class PrivateGPTServer {
                     },
                     required: ['email']
                 }
+            },
+			{   /* 6.0 pen AI compatible API Chat ######################################################################################*/
+                name: 'oai_comp_api_chat',
+                description: 'Start or continue a chat with PrivateGPT with optional RAG capabilities',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        question: { type: 'string', description: 'The question or prompt to send' },
+                        usePublic: { type: 'boolean', description: 'Use public knowledge base', default: false },
+                        groups: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'Group names for RAG (exclusive with usePublic)',
+                        },
+                        language: { type: 'string', description: 'Language code (e.g., "en")', default: 'en' },
+                    },
+                    required: ['question'],
+                },
+            },
+            {   /* 6.1 Open AI compatible API Continue Chat #############################################################################*/
+                name: 'oai_comp_api_continue_chat',
+                description: 'Continue an existing chat',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        chatId: { type: 'string', description: 'ID of the existing chat to continue' },
+                        question: { type: 'string', description: 'The next question or message in the chat' },
+                    },
+                    required: ['chatId', 'question'],
+                },
             }
         ],
     }));
@@ -3108,19 +3138,19 @@ async run() {
 
                     const { question, usePublic, groups, language } = args;
 
-                    // Konflikt zwischen `usePublic` und `groups` lösen
-                    if (groups && groups.length > 0) {
-                        // ############## REPLACE if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
-                        args.usePublic = true;
-                    }
+					// Konflikt zwischen `usePublic` und `groups` lösen
+					if (usePublic && groups && groups.length > 0) {
+						if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
+						args.usePublic = false;
+					}
 
-                    try {
-                        // Loggen der Chat-Anfrage
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
-                            .replace('${question}', question)
-                            .replace('${usePublic}', usePublic)
-                            .replace('${groups}', "")
-                            .replace('${language}', language), 'info');
+					try {
+						// Loggen der Chat-Anfrage
+						if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+							.replace('${question}', question)
+							.replace('${usePublic}', usePublic)
+							.replace('${groups}', JSON.stringify(groups))
+							.replace('${language}', language), 'info');
 
                         const response = await this.axiosInstance.post(
                             '/chats',
