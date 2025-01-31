@@ -296,6 +296,7 @@ logEvent('system', 'conf', l.prefix_Allow_Keygen, AllowKeygen ? t.keygenEnabled 
 logEvent('system', 'conf', l.prefix_Private_API_URL, privateKeyPath, 'info'); // Möglicherweise hier ein anderer Prefix benötigt
 logEvent('system', 'conf', l.prefix_Public_API_URL, publicKeyPath, 'info'); // Möglicherweise hier ein anderer Prefix benötigt
 logEvent('system', 'conf', l.prefix_Restricted_Groups, restrictedGroups, 'info');
+logEvent('system', 'conf', l.prefix_openaicompAPI, OpenAICompAPI, 'info');
 logEvent('system', 'conf', l.prefix_WRITTEN_LOGFILE, allowWrittenLogfile, 'info');
 logEvent('system', 'conf', l.prefix_LOG_IPs, LogIps, 'info');
 logEvent('system', 'conf', l.prefix_ANONYMOUS_MODE, anonymousMode, 'info');
