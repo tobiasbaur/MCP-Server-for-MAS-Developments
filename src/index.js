@@ -1137,6 +1137,36 @@ class PrivateGPTServer {
                     },
                     required: ['email']
                 }
+            },
+			{   /* 6.0 pen AI compatible API Chat ######################################################################################*/
+                name: 'oai_comp_api_chat',
+                description: 'Start or continue a chat with PrivateGPT with optional RAG capabilities',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        question: { type: 'string', description: 'The question or prompt to send' },
+                        usePublic: { type: 'boolean', description: 'Use public knowledge base', default: false },
+                        groups: {
+                            type: 'array',
+                            items: { type: 'string' },
+                            description: 'Group names for RAG (exclusive with usePublic)',
+                        },
+                        language: { type: 'string', description: 'Language code (e.g., "en")', default: 'en' },
+                    },
+                    required: ['question'],
+                },
+            },
+            {   /* 6.1 Open AI compatible API Continue Chat #############################################################################*/
+                name: 'oai_comp_api_continue_chat',
+                description: 'Continue an existing chat',
+                inputSchema: {
+                    type: 'object',
+                    properties: {
+                        chatId: { type: 'string', description: 'ID of the existing chat to continue' },
+                        question: { type: 'string', description: 'The next question or message in the chat' },
+                    },
+                    required: ['chatId', 'question'],
+                },
             }
         ],
     }));
