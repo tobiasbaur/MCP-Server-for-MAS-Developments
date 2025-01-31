@@ -79,7 +79,10 @@ async def chat_completions(request: ChatCompletionRequest):
             instances.append(instance)
 
         print(f"💁 Request: {request.messages[len(request.messages) - 1].content}")
-        response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
+        # "oai_comp_api_chat",
+        # "oai_comp_api_continue_chat"
+        # 'chat'
+        response = pgpt.respond_with_context(request.messages, request.response_format, request.tools, command="chat")
 
 
     else:
@@ -87,7 +90,21 @@ async def chat_completions(request: ChatCompletionRequest):
             "chatId": "0",
             "answer": "No Input given",
         }
-    print(f"💡 Response: {response["answer"]}")
+    if 'answer' in response:
+        print(f"💡 Response: {response["answer"]}")
+
+    elif 'error' in response:
+        print(f"❌ Error: {response["error"]}")
+        response = {
+            "chatId": "0",
+            "answer": str(response["error"]),
+        }
+    else:
+        response = {
+            "chatId": "0",
+            "answer": str(response),
+        }
+
     if request.stream:
         return StreamingResponse(
             _resp_async_generator(response, request), media_type="application/x-ndjson"

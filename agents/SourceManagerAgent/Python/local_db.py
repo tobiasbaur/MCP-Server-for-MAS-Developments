@@ -128,3 +128,26 @@ def list_db(db):
     except Error as e:
         print(e)
 
+
+def get_all_db_entries(db):
+    results = []
+    try:
+        con = sqlite3.connect(db)
+        cur = con.cursor()
+        cur.execute("SELECT * FROM users ORDER BY id DESC")
+        rows = cur.fetchall()
+        for row in rows:
+            document = Document
+            document.id = row[0]
+            document.content = row[1]
+            document.groups = row[2]
+            document.file = row[3]
+            document.user = row[4]
+            results.append(document)
+        con.close()
+        return results
+    except Error as e:
+        print(e)
+        return []
+
+

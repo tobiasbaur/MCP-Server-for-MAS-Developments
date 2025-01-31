@@ -11,8 +11,9 @@ from flask_cors import CORS  # Import von Flask-CORS
 
 from agents.AgentInterface.Python.color import Color
 from agents.SourceManagerAgent.Python.file_tools.loader_factory import LoadersFactory
-from agents.SourceManagerAgent.Python.local_db import create_sql_table, list_db, add_to_sql_table, delete_from_sql_table, \
-    get_from_sql_table
+from agents.SourceManagerAgent.Python.local_db import create_sql_table, list_db, add_to_sql_table, \
+    delete_from_sql_table, \
+    get_from_sql_table, get_all_db_entries
 from ...AgentInterface.Python.agent import PrivateGPTAgent
 from ...AgentInterface.Python.config import Config, ConfigError
 import os
@@ -81,13 +82,13 @@ class FileUploadAgent(PrivateGPTAgent):
           - upload content: <Content>    Uploads content from user input
           
           List:
-          - list pgpt                    Lists documents on PGPT server
-          - list local                   Lists documents known in local database
+          - list: pgpt                   Lists documents on PGPT server
+          - list: db                     Lists documents known in local database
           - info: <ID>                   Shows info for an id from the local database
           
           Delete:
           - delete: <ID>                 Deletes a Document from PGPT and local DB
-          - delete: unknown              Deletes all Documents on PGPT that are not in the local DB
+          - delete: unknown              Deletes all Documents on PGPT that are not in the local DB, and delete documents locally that are not on PGPT
           - delete: all                  Deletes all Documents in the selected groups
           
 
@@ -161,6 +162,9 @@ class FileUploadAgent(PrivateGPTAgent):
 
 
                 if user_input.strip().lower() == "delete: unknown":
+                    available_documents = self.send_list_sources_request(groups[0])
+                    sources = json.loads(available_documents)["sources"]
+
                     for sourceid in sources:
                         db_entry = get_from_sql_table(db, sourceid)
                         if db_entry is None:
@@ -170,7 +174,20 @@ class FileUploadAgent(PrivateGPTAgent):
                         else:
                             print("keeping: " + sourceid + " " + db_entry.file + " " + db_entry.content[:100])
 
+
+                    print("Cleaning local database of deleted entries...")
+                    available_documents = self.send_list_sources_request(groups[0])
+                    sources = json.loads(available_documents)["sources"]
+                    db_entries = get_all_db_entries(db)
+                    for document in db_entries:
+                        if document.id not in sources:
+                            delete_from_sql_table(db, document.id)
+                    print(".. done.")
+
+
                 elif user_input.strip().lower() == "delete: all":
+                    available_documents = self.send_list_sources_request(groups[0])
+                    sources = json.loads(available_documents)["sources"]
                     for sourceid in sources:
                         response = self.delete_source(sourceid)
                         print(response)
@@ -181,23 +198,25 @@ class FileUploadAgent(PrivateGPTAgent):
 
                     #if success delete from db...
                     response = self.delete_source(sourceid)
-                    print(response)
                     delete_from_sql_table(db, sourceid)
 
 
-                elif user_input.strip().lower() == "list pgpt":
+                elif user_input.strip().lower() == "list: pgpt":
                     print("Documents in " + groups[0] + ":")
                     available_documents = self.send_list_sources_request(groups[0])
                     sources = json.loads(available_documents)["sources"]
                     print(sources)
 
-                elif user_input.strip().lower() == "list local":
+                elif user_input.strip().lower() == "list: db":
                     list_db(db)
 
                 elif user_input.strip().startswith("info: "):
                     sourceid = user_input.strip().lower()[6:]
                     document = get_from_sql_table(db, sourceid)
-                    print("Id: " + document.id + " File: " + document.file + " User: " + document.user + " Group: " + document.groups + " Content: " + document.content )
+                    if document is not None:
+                        print("Id: " + document.id + " File: " + document.file + " User: " + document.user + " Group: " + document.groups + " Content: " + document.content )
+                    else:
+                        print("No entry found in local database")
 
 
                 elif user_input.strip().lower() == "exit":

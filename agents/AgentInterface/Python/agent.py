@@ -154,7 +154,7 @@ class PrivateGPTAgent:
             logging.error(self.lang["list_groups_failed"].format(message=str(e)))
             return []
 
-    def query_private_gpt(self, prompt, use_public=False, language="en", groups=None):
+    def query_private_gpt(self, prompt, use_public=False, language="en", groups=None, command="chat"):
         if not self.token:
             error_msg = self.get_lang_message("authentication_failed")
             logging.error(error_msg)
@@ -178,7 +178,7 @@ class PrivateGPTAgent:
         relevant_groups = [g for g in groups if g in self.allowed_groups]
 
         payload = {
-            "command": "chat",
+            "command": command,
             "token": self.token,
             "arguments": {
                 "question": prompt,
@@ -191,7 +191,6 @@ class PrivateGPTAgent:
         try:
             resp = self.network_client.send_request(payload)
             logging.info(lang["received_response"].format(response=resp))
-
             if resp.get("status") == 200 and resp.get("message") == "success":
                 content = resp.get("content", {})
                 #answer = content.get("answer", lang["agent_error"].format(error=lang["no_answer_received"]))
@@ -203,6 +202,8 @@ class PrivateGPTAgent:
             logging.error(f"❌ {error_msg}")
             return json.dumps({"error": error_msg})
 
+
+
     def respond(self, user_input, groups=None):
         response = self.knowledge_base.get(user_input, None)
         if response:
@@ -211,7 +212,7 @@ class PrivateGPTAgent:
         else:
             return self.query_private_gpt(user_input, groups=groups)
 
-    def respond_with_context(self, messages, response_format=None, request_tools = None):
+    def respond_with_context(self, messages, response_format=None, request_tools = None, command="chat"):
         user_input =  f'{messages[len(messages)-1].content}'
 
         # PGPT manages history and context itself so we don't need to forward the history.
@@ -227,11 +228,11 @@ class PrivateGPTAgent:
         if request_tools is not None:
             user_input += self.add_tools(request_tools)
 
-        result = self.query_private_gpt(user_input)
+        result = self.query_private_gpt(user_input, command=command)
         if 'error' in result:
             # Try to login again and send the query once more on error.
             if self.login():
-                result = self.query_private_gpt(user_input)
+                result = self.query_private_gpt(user_input, command=command)
                 return result
 
         return result
@@ -303,9 +304,10 @@ class PrivateGPTAgent:
         }
 
         try:
-            resp = self.network_client.send_request(payload)
-            logging.info(self.lang["received_response"].format(response=resp))
-            print(resp)
+            response = self.network_client.send_request(payload)
+            logging.info(self.lang["received_response"].format(response=response))
+            resp = response.get("data")
+
             if resp.get("status") == 200 and resp.get("message") == "success":
                 return json.dumps(resp["data"])
             else:
