@@ -128,6 +128,7 @@ const requestedLang = getEnvVar('LANGUAGE', ['Server_Config', 'LANGUAGE'], 'en')
 const apiUrl = getEnvVar('API_URL', ['PGPT_Url', 'API_URL']);
 const Port = getEnvVar('PORT', ['Server_Config', 'PORT'], '5000');
 const restrictedGroups = getEnvVar('RESTRICTED_GROUPS', ['Restrictions', 'RESTRICTED_GROUPS'], 'false').toString();
+const OpenAICompAPI = getEnvVar('ENABLE_OPEN_AI_COMP_API', ['Restrictions', 'ENABLE_OPEN_AI_COMP_API'], 'false').toString();
 const sslValidate = getEnvVar('SSL_VALIDATE', ['Server_Config', 'SSL_VALIDATE'], 'false').toString();
 const PwEncryption = getEnvVar('PW_ENCRYPTION', ['Server_Config', 'PW_ENCRYPTION'], 'false') === 'true';
 const AllowKeygen = getEnvVar('ALLOW_KEYGEN', ['Server_Config', 'ALLOW_KEYGEN'], 'false') === 'true';
@@ -472,15 +473,28 @@ function checkToolEnabled(toolName) {
         return null;
     }
 
-    if (!isToolEnabled(toolName)) {
+    if (toolName === "oai_comp_api") {
+        if (OpenAICompAPI) {
+            return null;
+        } else {
+            logEvent('system', 'N/A', l.prefix_Tool_Disabled, t.toolDisabledLog.replace('${toolName}', toolName), 'error');
+        }
+    }
+
+    if (!OpenAICompAPI || !isToolEnabled(toolName)) {
         logEvent(
-            'system', 'N/A', l.prefix_Tool_Disabled, t.toolDisabledLog.replace('${toolName}', toolName), 'error'
+            'system', 
+            'N/A', 
+            l.prefix_Tool_Disabled, 
+            t.toolDisabledLog.replace('${toolName}', toolName), 
+            'error'
         );
         return {
             status: 'error',
             message: messages[lang].toolDisabledError.replace('${toolName}', toolName),
         };
     }
+
     return null; // Tool ist aktiviert
 }
 
@@ -1633,8 +1647,7 @@ class PrivateGPTServer {
                                 status: error.response?.status || 'E33-R-3301', // Internal Server Error
                             };
                         }
-                    }
-                    
+                    }                   
                     /* 3.4 Delete Source ##############################################################################*/
                     case 'delete_source': {
                         const disabledResponse = checkToolEnabled('delete_source');
@@ -1996,6 +2009,123 @@ class PrivateGPTServer {
                             };
                         }
                     }
+                   /* 6.0 OpenAPI Compatible API Chat #######################################################################################*/
+                    case 'oai_comp_api_chat': {
+                        const disabledResponse = checkToolEnabled('oai_comp_api');
+                        if (disabledResponse) return disabledResponse;
+
+                        const { token, arguments: args } = request.params;
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chat, t.extractedToken.replace('${token}', token), 'info');
+
+                        // Token prüfen und validieren
+                        if (!token) {
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
+                            return { status: 'E60-R-6000', message: t.missingTokenError };
+                        }
+
+                        // Argument-Validierung
+                        if (!args || !args.question) {
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
+                            return {
+                                status: 'error',
+                                message: t.missingArgumentsError.replace('${args}', JSON.stringify(args)),
+                            };
+                        }
+
+                        const { question, usePublic, groups, language } = args;
+
+                        // Konflikt zwischen `usePublic` und `groups` lösen
+                        if (usePublic && groups && groups.length > 0) {
+                            if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
+                            args.usePublic = false;
+                        }
+
+                        try {
+                            // Loggen der Chat-Anfrage
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+                                .replace('${question}', question)
+                                .replace('${usePublic}', usePublic)
+                                .replace('${groups}', JSON.stringify(groups))
+                                .replace('${language}', language), 'info');
+
+                            const response = await this.axiosInstance.post(
+                                '/chats',
+                                {
+                                    question,
+                                    usePublic: usePublic || false,
+                                    groups: Array.isArray(groups) ? groups : [groups],
+                                    language: language || 'de',
+                                },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                            );
+
+                            const data = response.data?.data || {};
+                            // Loggen der erfolgreichen Chat-Antwort
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
+
+                            // Erfolgsantwort mit Status und Daten
+                            return {
+                                status: response.data?.status || 'ok',
+                                message: response.data?.message || 'Chat erfolgreich.',
+                                content: {
+                                    chatId: data.chatId,
+                                    answer: data.answer,
+                                    sources: data.sources || [],
+                                },
+                            };
+                        } catch (error) {
+                            const chatApiErrorMessage = error.message || error.response?.data;
+                            // Loggen des Fehlers bei der Chat-API-Anfrage
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatApiError, t.chatApiError.replace('${error}', chatApiErrorMessage), 'error');
+
+                            // Fehlerantwort mit Status und Nachricht
+                            return {
+                                status: error.response?.status || 'E60-R-6002',
+                                message: error.response?.data?.message || t.chatApiErrorDefault,
+                            };
+                        }
+                    }
+                    /* 6.1 Continue Chat ##############################################################################*/
+                    case 'oai_comp_api_continue_chat': {
+                        const disabledResponse = checkToolEnabled('oai_comp_api');
+                        if (disabledResponse) return disabledResponse;
+
+                        const args = request.params.arguments;
+
+                        if (!args || !args.chatId || !args.question) {
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_continue_chatError, t.missingChatParams, 'error');
+                            return {
+                              status: 'E21-R-6100',
+                              message: t.missingChatParams
+                            };
+                        }
+
+                        const { chatId, question } = args;
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_continue_chat, t.conversationContinuation.replace('${chatId}', chatId), 'info');
+
+                        try {
+                            const continueChatResponse = await this.axiosInstance.patch(`/chats/${chatId}`, {
+                                question: question,
+                            });
+                            // Loggen der erfolgreichen Fortsetzung der Konversation
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_continue_chatSuccess, t.conversationSuccess.replace('${data}', JSON.stringify(continueChatResponse.data, null, 2)), 'info');
+                            return {
+                                content: {
+                                    chatId:  continueChatResponse.data.data.chatId,
+                                    answer:  continueChatResponse.data.data.answer,
+                                    sources: continueChatResponse.data.sources || [],
+                                    message: continueChatResponse.data.message,
+                                    status:  continueChatResponse.data.status,
+                                },
+                            };
+                        } catch (error) {
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_continue_chatError, t.apiRequestError.replace('${error}', error.message), 'error');
+                            return {
+                              status: error.response?.status || 'E61-R-6101',
+                              message: error.response?.data?.message || t.continueConversationError,
+                            };
+                        }
+                    }
                     default:
                         // Loggen unbekannter Befehle
                         if (!isanonymousModeEnabled) logEvent(
@@ -2077,8 +2207,7 @@ async run() {
 
             switch (message.command) {
                 /* 1.0 Login ######################################################################################*/
-				// clientIP, clientPort, functionName, status, level = 'info')
-				
+				// clientIP, clientPort, functionName, status, level = 'info')				
                 case 'login': {
                     const disabledResponse = checkToolEnabled('login');
                     if (disabledResponse) return disabledResponse;
@@ -2168,7 +2297,6 @@ async run() {
                         };
                     }
                 }
-
                 /* 2.0 Chat #######################################################################################*/
                 case 'chat': {
                     const disabledResponse = checkToolEnabled('chat');
@@ -2180,7 +2308,7 @@ async run() {
                     // Token prüfen und validieren
                     if (!token) {
                         if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
-                        return { status: 'E20-R-2000', message: t.missingTokenError };
+                        return { status: 'E20-M-2000', message: t.missingTokenError };
                     }
 
                     // Argument-Validierung
@@ -2244,8 +2372,7 @@ async run() {
                             message: error.response?.data?.message || t.chatApiErrorDefault,
                         };
                     }
-                }
-				
+                }			
 				/* 2.1 Continue Chat ##############################################################################*/
 				case 'continue_chat': {
 					const disabledResponse = checkToolEnabled('continue_chat');
@@ -2605,8 +2732,7 @@ async run() {
 							status: error.response?.status || 'E34-M-3451', // Internal Server Error
 						};
 					}
-				}
-				
+				}				
 				/* 4.0 List Groups ################################################################################*/
 				case 'list_groups': {
 					const disabledResponse = checkToolEnabled('list_groups');
@@ -2850,7 +2976,7 @@ async run() {
 					if (!args || !args.email) {
 						if (!isanonymousModeEnabled) logEvent('client', 'swmsg', l.prefix_edit_user, t.emailRequiredForEdit, 'error');
 						return {
-							status: 'E51-R-5100',
+							status: 'E51-M-5100',
 							message: t.emailRequiredForEdit
 						};
 					}
@@ -2953,6 +3079,124 @@ async run() {
 							data: {},
 							message: error.response?.data?.message || 'Löschen des Users fehlgeschlagen. Bitte versuchen Sie es später erneut.',
 							status: error.response?.status || 'E52-M-5251', // Internal Server Error
+						};
+					}
+				}
+				/* 6.0 Open AI compatible API Chat #######################################################################################*/
+                case 'oai_comp_api_chat': {
+                    const disabledResponse = checkToolEnabled('oai_comp_api');
+                    if (disabledResponse) return disabledResponse;
+
+                    const { token, arguments: args } = message;
+                    if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chat, t.extractedToken.replace('${token}', token), 'info');
+
+                    // Token prüfen und validieren
+                    if (!token) {
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
+                        return { status: 'E60-M-6000', message: t.missingTokenError };
+                    }
+
+                    // Argument-Validierung
+                    if (!args || !args.question) {
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
+                        return {
+                            status: 'error',
+                            message: t.missingArgumentsError.replace('${args}', JSON.stringify(args)),
+                        };
+                    }
+
+                    const { question, usePublic, groups, language } = args;
+
+                    // Konflikt zwischen `usePublic` und `groups` lösen
+                    if (groups && groups.length > 0) {
+                        // ############## REPLACE if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
+                        args.usePublic = true;
+                    }
+
+                    try {
+                        // Loggen der Chat-Anfrage
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+                            .replace('${question}', question)
+                            .replace('${usePublic}', usePublic)
+                            .replace('${groups}', "")
+                            .replace('${language}', language), 'info');
+
+                        const response = await this.axiosInstance.post(
+                            '/chats',
+                            {
+                                question,
+                                usePublic: usePublic || false,
+                                groups: Array.isArray(groups) ? groups : [groups],
+                                language: language || 'de',
+                            },
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+
+                        const data = response.data?.data || {};
+                        // Loggen der erfolgreichen Chat-Antwort
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatSuccess, t.chatResponseSuccess.replace('${data}', JSON.stringify(data)), 'info');
+
+                        // Erfolgsantwort mit Status und Daten
+                        return {
+                            status: response.data?.status || 'ok',
+                            message: response.data?.message || 'Chat erfolgreich.',
+                            content: {
+                                chatId: data.chatId,
+                                answer: data.answer,
+                                sources: data.sources || [],
+                            },
+                        };
+                    } catch (error) {
+                        const chatApiErrorMessage = error.message || error.response?.data;
+                        // Loggen des Fehlers bei der Chat-API-Anfrage
+                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatApiError, t.chatApiError.replace('${error}', chatApiErrorMessage), 'error');
+
+                        // Fehlerantwort mit Status und Nachricht
+                        return {
+                            status: error.response?.status || 'E60-M-6002',
+                            message: error.response?.data?.message || t.chatApiErrorDefault,
+                        };
+                    }
+                }			
+				/* 6.1 Open AI compatible API Continue Chat ##############################################################################*/
+				case 'oai_comp_api_continue_chat': {
+					const disabledResponse = checkToolEnabled('oai_comp_api');
+					if (disabledResponse) return disabledResponse;
+
+					const token = message.token; // Token direkt extrahieren
+					const args = message.arguments || {}; // Sichere Extraktion der Argumente
+					const { chatId, question } = args;
+
+					if (!args || !args.chatId || !args.question) {
+						if (!isanonymousModeEnabled) logEvent('client', 'swmsg', l.prefix_continue_chat, t.missingChatParams, 'error');
+						return { status: 'E61-M-6150', message: t.missingChatParams };
+					}
+
+					try {
+						const continueChatResponse = await this.axiosInstance.patch(
+							`/chats/${chatId}`,
+							{ question },
+							{ headers: { Authorization: `Bearer ${token}` } }
+						);
+
+						// Loggen der erfolgreichen Continue-Chat-Antwort
+						if (!isanonymousModeEnabled) logEvent('client', 'swmsg', l.prefix_continue_chatSuccess, t.conversationSuccess.replace('${data}', JSON.stringify(continueChatResponse.data, null, 2)), 'info');
+
+						return {
+							content: {
+								chatId: continueChatResponse.data.data.chatId,
+								answer: continueChatResponse.data.data.answer,
+								sources: continueChatResponse.data.sources || [],
+								message: continueChatResponse.data.message,
+								status: continueChatResponse.data.status,
+							},
+						};
+					} catch (error) {
+						// Loggen des Fehlers bei der Continue-Chat-API-Anfrage
+						if (!isanonymousModeEnabled) logEvent('client', 'swmsg', l.prefix_apiRequestError, t.apiRequestError.replace('${error}', error.message), 'error');
+						return {
+							status: 'E61-M-6151',
+							message: error.response?.data?.message || error.message || t.noErrorMessage,
 						};
 					}
 				}
