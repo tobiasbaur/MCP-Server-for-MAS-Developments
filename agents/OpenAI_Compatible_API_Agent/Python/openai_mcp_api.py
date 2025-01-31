@@ -1,15 +1,12 @@
-import asyncio
-import json
-import time
 from pathlib import Path
-from typing import Optional, List
-import tiktoken
-from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 
 from fastapi import FastAPI, Request
 from threading import local
+import uvicorn
 
+from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import _resp_sync, _resp_async_generator, get_models, \
+    ChatCompletionRequest, ChatInstance
 from ...AgentInterface.Python.agent import PrivateGPTAgent
 from ...AgentInterface.Python.config import Config, ConfigError
 
@@ -21,27 +18,11 @@ instances = []
 try:
     config_file = Path.absolute(Path(__file__).parent.parent / "pgpt_openai_api_mcp.json")
     config = Config(config_file=config_file, required_fields=["server_ip", "server_port", "email", "password"])
+    default_groups = config.get("groups", [])
 except ConfigError as e:
     print(f"Configuration Error: {e}")
     exit(1)
 
-
-class ChatInstance:
-    def __init__(self, api_key: str, agent: PrivateGPTAgent):
-        self.api_key = api_key
-        self.agent = agent
-
-# data models
-class Message(BaseModel):
-    role: str
-    content: str
-
-class ChatCompletionRequest(BaseModel):
-    model: Optional[str] = "PGPT - Mistral NeMo 12B"
-    messages: List[Message]
-    max_tokens: Optional[int] = 2048
-    temperature: Optional[float] = 0.1
-    stream: Optional[bool] = False
 
 @app.middleware("http")
 async def store_request_headers(request: Request, call_next):
@@ -56,6 +37,10 @@ async def chat_completions(request: ChatCompletionRequest):
 
     client_api_key = str(headers['authorization']).split(" ")[1]
     #print("API KEY: " + client_api_key)
+    groups = default_groups
+    if request.groups:
+        groups = request.groups
+    print("Groups: " + str(groups))
 
     if request.messages:
         #Check if this api-key already has a running instance
@@ -67,6 +52,11 @@ async def chat_completions(request: ChatCompletionRequest):
         if index > -1:
             # if we already have an instance, just reuse it. No need to open new connection
             pgpt = instances[index].agent
+            if pgpt.chosen_groups != groups:
+                print("⚠️ New Groups requested, switching to new Chat..")
+                config.set_value("groups", groups)
+                instances[index].agent = PrivateGPTAgent(config)
+                pgpt = instances[index].agent
         else:
             whitelist_keys = config.get("whitelist_keys", [])
             if len(whitelist_keys) > 0 and client_api_key not in whitelist_keys:
@@ -82,21 +72,39 @@ async def chat_completions(request: ChatCompletionRequest):
                 else:
                     return _resp_sync(response, request)
 
+            config.set_value("groups", groups)
             pgpt = PrivateGPTAgent(config)
             # remember that we already have an instance for the api key
             instance = ChatInstance(client_api_key, pgpt)
             instances.append(instance)
 
-        response = pgpt.respond_with_context(request.messages)
-        if "answer" not in response:
-            response["answer"] = "No Response received"
+        print(f"💁 Request: {request.messages[len(request.messages) - 1].content}")
+        # "oai_comp_api_chat",
+        # "oai_comp_api_continue_chat"
+        # 'chat'
+        response = pgpt.respond_with_context(request.messages, request.response_format, request.tools, command="chat")
+
 
     else:
         response = {
             "chatId": "0",
             "answer": "No Input given",
         }
-    print(f"💡 Response: {response["answer"]}")
+    if 'answer' in response:
+        print(f"💡 Response: {response["answer"]}")
+
+    elif 'error' in response:
+        print(f"❌ Error: {response["error"]}")
+        response = {
+            "chatId": "0",
+            "answer": str(response["error"]),
+        }
+    else:
+        response = {
+            "chatId": "0",
+            "answer": str(response),
+        }
+
     if request.stream:
         return StreamingResponse(
             _resp_async_generator(response, request), media_type="application/x-ndjson"
@@ -105,91 +113,14 @@ async def chat_completions(request: ChatCompletionRequest):
         return _resp_sync(response, request)
 
 
-def _resp_sync(response: json, request):
-    user_input = ""
-    for message in request.messages:
-        user_input += json.dumps({'role': message.role, 'content': message.content})
-
-    num_tokens_request = num_tokens_from_string(user_input, "o200k_base")
-    num_tokens_reply = num_tokens_from_string(response["answer"], "o200k_base")
-    num_tokens_overall = num_tokens_request + num_tokens_reply
-    citations = []
-    if "sources" in response:
-        citations = response["sources"]
-
-    return {
-        "id": response["chatId"],
-        "object": "chat.completion",
-        "created": time.time(),
-        "model": request.model,
-        "choices": [{"message": Message(role="assistant", content=response["answer"])}],
-        "citations": citations,
-        "usage": {
-            "prompt_tokens": num_tokens_request,
-            "completion_tokens": num_tokens_reply,
-            "total_tokens": num_tokens_overall
-        }
-    }
-
-async def _resp_async_generator(response: json, request):
-    user_input = ""
-    for message in request.messages:
-        user_input += json.dumps({'role': message.role, 'content': message.content})
-
-    num_tokens_request = num_tokens_from_string(user_input, "o200k_base")
-    num_tokens_reply = num_tokens_from_string(response["answer"], "o200k_base")
-    num_tokens_overall = num_tokens_request + num_tokens_reply
-
-    tokens = response["answer"].split(" ")
-    citations = []
-    if "sources" in response:
-        citations = response["sources"]
-
-    for i, token in enumerate(tokens):
-        chunk = {
-            "id": i,
-            "object": "chat.completion.chunk",
-            "created": time.time(),
-            "model": request.model,
-            "choices": [{"delta": {"content": token + " "}}],
-            "citations": citations,
-            "usage": {
-                "prompt_tokens": num_tokens_request,
-                "completion_tokens": num_tokens_reply,
-                "total_tokens": num_tokens_overall
-            }
-        }
-        yield f"data: {json.dumps(chunk)}\n\n"
-        await asyncio.sleep(0.05)
-    yield "data: [DONE]\n\n"
-
-
-def num_tokens_from_string(string: str, encoding_name: str) -> int:
-    """Returns the number of tokens in a text string."""
-    encoding = tiktoken.get_encoding(encoding_name)
-    num_tokens = len(encoding.encode(string))
-    return num_tokens
-
 
 @app.get("/models")
-def get_models():
-    return {
-        "object": "list",
-        "data": [
-            {
-                "id": "pgpt-mistral-nemo-12b",
-                "object": "model",
-                "created": 1686935002,
-                "owned_by": "Fujitsu"
-            }
-        ]
-    }
-
+def return_models():
+    return get_models()
 
 
 
 if __name__ == "__main__":
-    import uvicorn
     api_ip = config.get("api_ip", "0.0.0.0")
     api_port = config.get("api_port", 8002)
     uvicorn.run(app, host=api_ip, port=int(api_port))

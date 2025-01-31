@@ -12,13 +12,28 @@ class GroupValidationError(Exception):
     pass
 
 class PrivateGPTAgent:
+
     def __init__(self, config):
+
+        logging.basicConfig(
+            level=logging.ERROR,
+            encoding= "utf-8",
+            format='%(asctime)s %(levelname)s %(message)s',
+            handlers=[
+                logging.FileHandler("agent.log"),
+                logging.StreamHandler()
+            ]
+        )
+
+
+        self.config = config
         self.server_ip = config.get("server_ip")
         self.server_port = config.get("server_port")
         self.email = config.get("email")
         self.password = config.get("password")
-        self.chosen_groups = config.get("groups", [])
+        self.chosen_groups = config.data["groups"] or []
         self.language = config.get("language", "en")  # Standard ist Englisch
+        self.api_key = config.get("api_key", "default_api_key")  # Stellen Sie sicher, dass ein API-Key gesetzt ist
 
         # Überprüfen, ob die gewählte Sprache unterstützt wird
         if self.language not in languages:
@@ -68,7 +83,8 @@ class PrivateGPTAgent:
         """
         message = self.lang.get(key, "Message not defined.")
         try:
-            return message.format(**kwargs)
+            #return message
+            return message.format(**kwargs,  encoding="utf-8")
         except KeyError as e:
             logging.error(f"Missing placeholder in language file for key '{key}': {e}")
             return message
@@ -124,21 +140,21 @@ class PrivateGPTAgent:
             resp = self.network_client.send_request(payload)
             data_block = resp.get("data")
             if not data_block:
-                logging.warning(self.lang["no_data_in_response"].format(response=resp))
+                #logging.warning(self.lang["no_data_in_response"].format(response=resp))
                 return []
 
             if data_block.get("status") == 200 and data_block.get("message") == "success":
                 personal = data_block.get("personalGroups", [])
-                logging.info(self.lang["personal_groups"].format(groups=personal))
+                #logging.info(self.lang["personal_groups"].format(groups=personal))
                 return personal
             else:
-                logging.warning(self.lang["list_groups_failed"].format(message=data_block.get("message", self.lang["no_server_message"])))
+                #logging.warning(self.lang["list_groups_failed"].format(message=data_block.get("message", self.lang["no_server_message"])))
                 return []
         except NetworkError as e:
             logging.error(self.lang["list_groups_failed"].format(message=str(e)))
             return []
 
-    def query_private_gpt(self, prompt, use_public=False, language="en", groups=None):
+    def query_private_gpt(self, prompt, use_public=False, language="en", groups=None, command="chat"):
         if not self.token:
             error_msg = self.get_lang_message("authentication_failed")
             logging.error(error_msg)
@@ -162,7 +178,7 @@ class PrivateGPTAgent:
         relevant_groups = [g for g in groups if g in self.allowed_groups]
 
         payload = {
-            "command": "chat",
+            "command": command,
             "token": self.token,
             "arguments": {
                 "question": prompt,
@@ -175,17 +191,18 @@ class PrivateGPTAgent:
         try:
             resp = self.network_client.send_request(payload)
             logging.info(lang["received_response"].format(response=resp))
-
             if resp.get("status") == 200 and resp.get("message") == "success":
                 content = resp.get("content", {})
-                answer = content.get("answer", lang["agent_error"].format(error=lang["no_answer_received"]))
-                return json.dumps({"answer": answer})
+                #answer = content.get("answer", lang["agent_error"].format(error=lang["no_answer_received"]))
+                return content
             else:
-                return json.dumps({"error": resp.get("message", lang["agent_error"].format(error=lang["unknown_error"]))})
+                return {"error": resp.get("message", lang["agent_error"].format(error=lang["unknown_error"]))}
         except NetworkError as e:
             error_msg = lang["agent_error"].format(error=str(e))
             logging.error(f"❌ {error_msg}")
             return json.dumps({"error": error_msg})
+
+
 
     def respond(self, user_input, groups=None):
         response = self.knowledge_base.get(user_input, None)
@@ -195,7 +212,7 @@ class PrivateGPTAgent:
         else:
             return self.query_private_gpt(user_input, groups=groups)
 
-    def respond_with_context(self, messages):
+    def respond_with_context(self, messages, response_format=None, request_tools = None, command="chat"):
         user_input =  f'{messages[len(messages)-1].content}'
 
         # PGPT manages history and context itself so we don't need to forward the history.
@@ -205,10 +222,136 @@ class PrivateGPTAgent:
             user_input += "\nHere is some context about the previous conversation:\n"
             for message in messages:
                 user_input += f"{message.role}: {message.content}\n"
+        if response_format is not None:
+            user_input += self.add_response_format(response_format)
 
-        result = self.query_private_gpt(user_input)
-        return json.loads(result)
-         
+        if request_tools is not None:
+            user_input += self.add_tools(request_tools)
+
+        result = self.query_private_gpt(user_input, command=command)
+        if 'error' in result:
+            # Try to login again and send the query once more on error.
+            if self.login():
+                result = self.query_private_gpt(user_input, command=command)
+                return result
+
+        return result
+
+
+    def add_response_format(self, response_format):
+        prompt = "\nPlease fill in the following json template with realistic and appropriate information. In your reply, only return the generated json. If you can't answer return an empty json.\n"
+        prompt += json.dumps(response_format)
+        return prompt
+
+    def add_tools(self, response_tools):
+        prompt = "\nPlease use the following provided tools. In your reply, only return the generated result of the tool\n"
+        for tool in response_tools:
+            prompt += json.dumps(tool)
+        return prompt
+
+    def send_create_source_request(self, name, content, groups):
+        """
+        Sends a request to create a new source to the MCP server.
+
+        :param server_ip: IP address of the MCP server
+        :param server_port: Port number of the MCP server
+        :param token: Authentication token
+        :param name: Name of the new source
+        :param content: Content to be formatted as markdown
+        :param groups: List of groups to assign the source to
+        :return: Response from the server
+        """
+        payload = {
+            "command": "create_source",
+            "token": self.token,
+            "arguments": {
+                "name": name,
+                "content": content,
+                "groups": groups or []
+            }
+        }
+
+        try:
+            resp = self.network_client.send_request(payload)
+            logging.info(self.lang["received_response"].format(response=resp))
+            print(resp)
+            if resp.get("status") == 200 and resp.get("message") == "success":
+                return json.dumps(resp["data"])
+            else:
+                return json.dumps(
+                    {"error": resp.get("message", self.lang["agent_error"].format(error=self.lang["unknown_error"]))})
+        except NetworkError as e:
+            error_msg = self.lang["agent_error"].format(error=str(e))
+            logging.error(f"❌ {error_msg}")
+            return json.dumps({"error": error_msg})
+
+    def delete_source(self, source_id):
+        """
+        Sends a request to the MCP server to delete an existing source.
+
+        :param server_ip: IP address of the MCP server
+        :param server_port: Port number of the MCP server
+        :param token: Authorization token
+        :param source_id: ID of the source to delete
+        :return: Response from the server
+        """
+        payload = {
+            "command": "delete_source",
+            "token": self.token,
+            "arguments": {
+                "sourceId": source_id
+            }
+        }
+
+        try:
+            response = self.network_client.send_request(payload)
+            logging.info(self.lang["received_response"].format(response=response))
+            resp = response.get("data")
+
+            if resp.get("status") == 200 and resp.get("message") == "success":
+                return json.dumps(resp["data"])
+            else:
+                return json.dumps(
+                    {"error": resp.get("message", self.lang["agent_error"].format(error=self.lang["unknown_error"]))})
+        except NetworkError as e:
+            error_msg = self.lang["agent_error"].format(error=str(e))
+            logging.error(f"❌ {error_msg}")
+            return json.dumps({"error": error_msg})
+
+
+    def send_list_sources_request(self, group_name):
+        """
+        Sends a request to list sources in a specific group to the MCP server.
+
+        :param server_ip: IP address of the MCP server
+        :param server_port: Port number of the MCP server
+        :param token: Authentication token
+        :param group_name: Name of the group to list sources from
+        :return: Response from the server
+        """
+        payload = {
+            "command": "list_sources",
+            "token": self.token,
+            "attributes": {
+                "groupName": group_name
+            }
+        }
+
+        try:
+            response = self.network_client.send_request(payload)
+            logging.info(self.lang["received_response"].format(response=response))
+            resp = response.get('content')
+
+            if resp.get("status") == 200 and resp.get("message") == "success":
+                return json.dumps(resp["data"])
+            else:
+                return json.dumps(
+                    {"error": response.get("message", self.lang["agent_error"].format(error=self.lang["unknown_error"]))})
+        except NetworkError as e:
+            error_msg = self.lang["agent_error"].format(error=str(e))
+            logging.error(f"❌ {error_msg}")
+            return json.dumps({"error": error_msg})
+
     def logout(self):
         if not self.token:
             logging.info(self.get_lang_message("no_token_logout"))
@@ -232,37 +375,8 @@ class PrivateGPTAgent:
         except NetworkError as e:
             logging.error(self.get_lang_message("logout_failed", message=str(e)))
 
+
     def run(self):
-        if not self.token:
-            logging.error(self.get_lang_message("authentication_failed"))
-            print(self.get_lang_message("authentication_failed"), flush=True)
-            return
+        pass
 
-        welcome_msg = f"{Color.OKGREEN}{self.get_lang_message('welcome')}{Color.ENDC}"
-        print(welcome_msg, flush=True)
-        logging.info(self.get_lang_message("user_interface_started"))
 
-        while True:
-            try:
-                user_input = input(f"{Color.OKBLUE}{self.get_lang_message('user_question')}{Color.ENDC}")
-                if user_input.strip().lower() == "exit":
-                    goodbye_msg = f"{Color.OKGREEN}{self.get_lang_message('goodbye')}{Color.ENDC}"
-                    print(goodbye_msg, flush=True)
-                    logging.info(self.get_lang_message("session_ended"))
-                    break
-                elif not user_input.strip():
-                    continue
-                result = self.respond(user_input)
-                # Formatierte Ausgabe der Antwort
-                parsed_result = json.loads(result)
-                if "answer" in parsed_result:
-                    answer = parsed_result["answer"]
-                    print(f"{Color.OKGREEN}{self.get_lang_message('agent_answer', answer=answer)}{Color.ENDC}", flush=True)
-                else:
-                    error = parsed_result["error"]
-                    print(f"{Color.FAIL}{self.get_lang_message('agent_error', error=error)}{Color.ENDC}", flush=True)
-            except (KeyboardInterrupt, EOFError):
-                goodbye_msg = f"{Color.OKGREEN}{self.get_lang_message('goodbye')}{Color.ENDC}"
-                print(goodbye_msg, flush=True)
-                logging.info(self.get_lang_message("session_interrupted"))
-                break

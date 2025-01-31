@@ -24,6 +24,8 @@ class NetworkClient:
         Wenn der Schlüssel nicht existiert, wird eine Standardnachricht zurückgegeben.
         """
         message = self.lang.get(key, "Message not defined.")
+        utf8_encoded_string = bytes(message, 'utf-8')
+        message = str(utf8_encoded_string, 'utf-8')
         try:
             return message.format(**kwargs)
         except KeyError as e:

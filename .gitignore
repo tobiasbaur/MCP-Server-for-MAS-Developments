@@ -21,3 +21,5 @@ agents/ChatBotAgent/agent.log
 agents/OpenAI_Compatible_API_Agent/venv
 agent.log
 *.log
+agents/SourceManagerAgent/config.json
+agents/SourceManagerAgent/database/documents.sql
