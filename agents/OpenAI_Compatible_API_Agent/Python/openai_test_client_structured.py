@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     # Initialize OpenAI client that points to the local LM Studio server
     client = OpenAI(
-        base_url="http://localhost:8002/",
+        base_url="http://localhost:8001/",
         api_key=args.api_key
     )
 
@@ -57,11 +57,17 @@ if __name__ == "__main__":
         stream=stream,
         response_format=character_schema,
         extra_body={
-            "groups": ["Tobias Baur"]
+            "groups": []
         }
     )
 
     # Parse and display the results
     #print(response.choices[0].message.content)
-    results = json.loads(response.choices[0].message.content)
-    print(json.dumps(results, indent=2))
+
+    if stream:
+        for chunk in response:
+            print(chunk.choices[0].delta.content or "")
+
+    else:
+        results = json.loads(response.choices[0].message.content)
+        print(json.dumps(results, indent=2))

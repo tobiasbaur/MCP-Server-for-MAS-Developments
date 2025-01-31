@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     stream = True
     client = OpenAI(
-        base_url="http://localhost:8001/",
+        base_url="http://localhost:8002/",
         api_key=args.api_key
     )
     completion = client.beta.chat.completions.parse(
@@ -78,7 +78,10 @@ if __name__ == "__main__":
         ],
         tools=[
             openai.pydantic_function_tool(Query),
-        ]
+        ],
+        extra_body={
+            "groups": []
+        }
     )
 
     print(completion.choices[0].message.tool_calls[0].function.parsed_arguments)

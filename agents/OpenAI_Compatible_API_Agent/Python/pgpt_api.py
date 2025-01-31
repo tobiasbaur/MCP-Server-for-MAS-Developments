@@ -46,7 +46,6 @@ class PrivateGPTAPI:
             self.access_header = None
 
         self.chosen_groups = config.data["groups"] or []
-        print(self.chosen_groups)
         self.language = config.get("language", "en")
         self.use_public = config.get("use_public", True)
         self.whitelist_keys = config.get("whitelist_keys", [])
@@ -117,6 +116,7 @@ class PrivateGPTAPI:
             if answer.startswith("{\"role\":"):
                  answerj = json.loads(answer)
                  data["data"]["answer"] = answerj["content"]
+                 data["data"]["chatId"] = "0"
 
             print(f"💡 Response: {answer}")
             return data

@@ -211,7 +211,7 @@ class PrivateGPTAgent:
         else:
             return self.query_private_gpt(user_input, groups=groups)
 
-    def respond_with_context(self, messages, response_format=None):
+    def respond_with_context(self, messages, response_format=None, request_tools = None):
         user_input =  f'{messages[len(messages)-1].content}'
 
         # PGPT manages history and context itself so we don't need to forward the history.
@@ -224,6 +224,9 @@ class PrivateGPTAgent:
         if response_format is not None:
             user_input += self.add_response_format(response_format)
 
+        if request_tools is not None:
+            user_input += self.add_tools(request_tools)
+
         result = self.query_private_gpt(user_input)
         if 'error' in result:
             # Try to login again and send the query once more on error.
@@ -235,8 +238,14 @@ class PrivateGPTAgent:
 
 
     def add_response_format(self, response_format):
-        prompt = "\nPlease fill in the following JSON template with realistic and appropriate information. In your reply, only return the generated json\n"
+        prompt = "\nPlease fill in the following json template with realistic and appropriate information. In your reply, only return the generated json. If you can't answer return an empty json.\n"
         prompt += json.dumps(response_format)
+        return prompt
+
+    def add_tools(self, response_tools):
+        prompt = "\nPlease use the following provided tools. In your reply, only return the generated result of the tool\n"
+        for tool in response_tools:
+            prompt += json.dumps(tool)
         return prompt
 
     def send_create_source_request(self, name, content, groups):

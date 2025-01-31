@@ -20,6 +20,7 @@ instances = []
 try:
     config_file = Path.absolute(Path(__file__).parent.parent / "pgpt_openai_api_proxy.json")
     config = Config(config_file=config_file, required_fields=["base_url"])
+    default_groups = config.get("groups", [])
 except ConfigError as e:
     print(f"Configuration Error: {e}")
     exit(1)
@@ -37,7 +38,7 @@ async def store_request_headers(request: Request, call_next):
 async def chat_completions(request: ChatCompletionRequest):
     headers = getattr(request_context, "headers", {})
     client_api_key = str(headers['authorization']).split(" ")[1]
-    groups = []
+    groups = default_groups
     if request.groups:
         groups = request.groups
     print("Groups: " + str(groups))
@@ -51,8 +52,6 @@ async def chat_completions(request: ChatCompletionRequest):
             index = indices[0]
         if index > -1:
             # if we already have an instance, just reuse it. No need to open new connection
-            print(instances[index].agent.chosen_groups)
-            print(groups)
             if instances[index].agent.chosen_groups != groups:
                 print("⚠️ New Groups requested, switching to new Chat..")
                 config.set_value("groups", groups)
@@ -68,8 +67,6 @@ async def chat_completions(request: ChatCompletionRequest):
             instances.append(instance)
 
         if pgpt.logged_in:
-
-            print(request)
             response = pgpt.respond_with_context(request.messages, request.response_format)
             if "answer" not in response:
                 response["answer"] = "No Response received"

@@ -58,7 +58,7 @@ def _resp_sync(response: json, request):
     citations = []
     if "sources" in response:
         citations = response["sources"]
-    print(response)
+
     return {
         "id": response["chatId"],
         "object": "chat.completion",

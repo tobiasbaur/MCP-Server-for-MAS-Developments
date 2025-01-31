@@ -23,6 +23,9 @@ if __name__ == "__main__":
             model="pgpt",
             messages=[{"role": "user", "content": "Say this is a test"}],
             stream=stream,
+            extra_body={
+                "groups": []
+            }
         )
         if stream:
             for chunk in chat_completion:

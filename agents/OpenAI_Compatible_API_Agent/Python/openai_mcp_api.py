@@ -18,6 +18,7 @@ instances = []
 try:
     config_file = Path.absolute(Path(__file__).parent.parent / "pgpt_openai_api_mcp.json")
     config = Config(config_file=config_file, required_fields=["server_ip", "server_port", "email", "password"])
+    default_groups = config.get("groups", [])
 except ConfigError as e:
     print(f"Configuration Error: {e}")
     exit(1)
@@ -36,7 +37,7 @@ async def chat_completions(request: ChatCompletionRequest):
 
     client_api_key = str(headers['authorization']).split(" ")[1]
     #print("API KEY: " + client_api_key)
-    groups = []
+    groups = default_groups
     if request.groups:
         groups = request.groups
     print("Groups: " + str(groups))
@@ -78,7 +79,7 @@ async def chat_completions(request: ChatCompletionRequest):
             instances.append(instance)
 
         print(f"💁 Request: {request.messages[len(request.messages) - 1].content}")
-        response = pgpt.respond_with_context(request.messages, request.response_format)
+        response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
 
 
     else:
