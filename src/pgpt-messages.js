@@ -15,6 +15,8 @@ function formatMessage(template, variables) {
  
 export const prefixMessages = {
 	en: {
+		prefix_openaicompAPI:				'Open AI cmp. API',
+		//##############
 		prefix_All_Funcs: 					'All Funcs',
 		prefix_Allow_Keygen: 				'Allow Keygen',
 		prefix_ANONYMOUS_MODE: 				'ANONYMOUS_MODE',
@@ -242,6 +244,8 @@ export const prefixMessages = {
 		prefix_list_groupsWarning: 'Listar Grupos: Aviso'
 	}, de: 
 		{
+		prefix_openaicompAPI: 'Open AI cmp. API',
+		// #######################################################
 		prefix_All_Funcs: 'Alle Funktionen',
 		prefix_Allow_Keygen: 'Keygen erlauben',
 		prefix_ANONYMOUS_MODE: 'ANONYMOUS_MODE',
@@ -813,6 +817,7 @@ export const prefixMessages = {
 
 export const messages = {
 	de: {
+		openaicompAPI: 'ENABLE_OPEN_AI_COMP_API Wert: ${val}',
 		createSourceError: 'Fehler beim Erstellen der Quelle: ${error}',
 		create_sourceUnknownError: 'Unbekannter Fehler beim Erstellen der Quelle: ${error}',
 		returnStatus: 'Status: ${Status}',
@@ -1025,6 +1030,7 @@ export const messages = {
 		tokenMissing: 'Token fehlt.'
 	},
     en: {
+		openaicompAPI: 'ENABLE_OPEN_AI_COMP_API value: ${val}',
 		createSourceError: 'Error creating source: ${error}',
 		create_sourceUnknownError: 'Unknown error creating source: ${error}',
 		returnStatus: 'Status: ${Status}',
