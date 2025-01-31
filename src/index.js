@@ -1141,7 +1141,7 @@ class PrivateGPTServer {
                 }
             },
 			{   /* 6.0 pen AI compatible API Chat ######################################################################################*/
-                name: 'oai_chat',
+                name: 'oai_comp_api_chat',
                 description: 'Start or continue a chat with PrivateGPT with optional RAG capabilities',
                 inputSchema: {
                     type: 'object',
@@ -2043,7 +2043,7 @@ class PrivateGPTServer {
                         }
                     }
                    /* 6.0 OpenAPI Compatible API Chat #######################################################################################*/
-                    case 'oai_chat': {
+                    case 'oai_comp_api_chat': {
                         const disabledResponse = checkToolEnabled('oai_comp_api');
                         if (disabledResponse) return disabledResponse;
 
@@ -3116,7 +3116,7 @@ async run() {
 					}
 				}
 				/* 6.0 Open AI compatible API Chat #######################################################################################*/
-                case 'oai_chat': {
+                case 'oai_comp_api_chat': {
                     const disabledResponse = checkToolEnabled('oai_comp_api');
                     if (disabledResponse) return disabledResponse;
 
