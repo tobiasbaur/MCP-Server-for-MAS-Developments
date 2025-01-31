@@ -4,7 +4,7 @@ import re
 import time
 
 import tiktoken
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 
 from agents.AgentInterface.Python.agent import PrivateGPTAgent
@@ -23,13 +23,16 @@ class Message(BaseModel):
     content: str
 
 
+
 class ChatCompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     messages: List[Message]
-    max_tokens: Optional[int] = 600000
+    max_tokens: Optional[int] = 60000
     temperature: Optional[float] = 0 #Not used atm
     stream: Optional[bool] = False
     response_format: Optional[object] = None
+    tools: Optional[object] = None
+    groups: Optional[object] = None
 
 
 def num_tokens(user_input, answer):
@@ -41,9 +44,7 @@ def num_tokens(user_input, answer):
 
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""
-    encoding = tiktoken.get_encoding(encoding_name)
-    num_tokens = len(encoding.encode(string))
-    return num_tokens
+    return len(tiktoken.get_encoding(encoding_name).encode(string))
 
 
 
@@ -57,7 +58,7 @@ def _resp_sync(response: json, request):
     citations = []
     if "sources" in response:
         citations = response["sources"]
-
+    print(response)
     return {
         "id": response["chatId"],
         "object": "chat.completion",

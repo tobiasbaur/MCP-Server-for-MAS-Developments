@@ -7,19 +7,19 @@ if __name__ == "__main__":
     parser.add_argument("--api_key", required=True, help="API key for login")
     args = parser.parse_args()
 
-    stream = True
+    stream = False
 
 
     # Initialize OpenAI client that points to the local LM Studio server
     client = OpenAI(
-        base_url="http://localhost:8001/",
+        base_url="http://localhost:8002/",
         api_key=args.api_key
     )
 
     # Define the conversation with the AI
     messages = [
         {"role": "system", "content": "You are a helpful AI assistant."},
-        {"role": "user", "content": "Create 5-10 fictional characters working at Fujitsu"}
+        {"role": "user", "content": "Create 5-10 fictional characters"}
     ]
 
     # Define the expected response structure
@@ -54,7 +54,11 @@ if __name__ == "__main__":
     response = client.chat.completions.create(
         model="pgpt",
         messages=messages,
+        stream=stream,
         response_format=character_schema,
+        extra_body={
+            "groups": ["Tobias Baur"]
+        }
     )
 
     # Parse and display the results

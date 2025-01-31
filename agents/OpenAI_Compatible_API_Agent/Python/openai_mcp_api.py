@@ -36,6 +36,10 @@ async def chat_completions(request: ChatCompletionRequest):
 
     client_api_key = str(headers['authorization']).split(" ")[1]
     #print("API KEY: " + client_api_key)
+    groups = []
+    if request.groups:
+        groups = request.groups
+    print("Groups: " + str(groups))
 
     if request.messages:
         #Check if this api-key already has a running instance
@@ -47,6 +51,11 @@ async def chat_completions(request: ChatCompletionRequest):
         if index > -1:
             # if we already have an instance, just reuse it. No need to open new connection
             pgpt = instances[index].agent
+            if pgpt.chosen_groups != groups:
+                print("⚠️ New Groups requested, switching to new Chat..")
+                config.set_value("groups", groups)
+                instances[index].agent = PrivateGPTAgent(config)
+                pgpt = instances[index].agent
         else:
             whitelist_keys = config.get("whitelist_keys", [])
             if len(whitelist_keys) > 0 and client_api_key not in whitelist_keys:
@@ -62,6 +71,7 @@ async def chat_completions(request: ChatCompletionRequest):
                 else:
                     return _resp_sync(response, request)
 
+            config.set_value("groups", groups)
             pgpt = PrivateGPTAgent(config)
             # remember that we already have an instance for the api key
             instance = ChatInstance(client_api_key, pgpt)

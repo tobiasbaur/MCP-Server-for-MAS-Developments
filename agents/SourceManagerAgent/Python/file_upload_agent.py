@@ -26,6 +26,8 @@ app = Flask(__name__)
 # Ändern Sie die Origins entsprechend Ihrer tatsächlichen Frontend-URL
 #CORS(app, resources={r"/*": {"origins": "http://192.168.100.185:5500"}}, supports_credentials=False)
 # Konfiguration laden
+import os
+
 
 
 class FileUploadAgent(PrivateGPTAgent):
@@ -67,6 +69,32 @@ class FileUploadAgent(PrivateGPTAgent):
         print(header)
         print(f"Current working directory: {os.getcwd()}")
 
+    def display_help_header(self):
+
+
+        header = f"""
+          ────────────────────────────────────────────────
+          Fujitsu PrivateGPT SourceManager Agent - Commands
+          ────────────────────────────────────────────────
+          Upload:
+          - upload file: <Filepath>      Uploads the content of a file (pdf, csv, xdls, md)
+          - upload content: <Content>    Uploads content from user input
+          
+          List:
+          - list pgpt                    Lists documents on PGPT server
+          - list local                   Lists documents known in local database
+          - info: <ID>                   Shows info for an id from the local database
+          
+          Delete:
+          - delete: <ID>                 Deletes a Document from PGPT and local DB
+          - delete: unknown              Deletes all Documents on PGPT that are not in the local DB
+          - delete: all                  Deletes all Documents in the selected groups
+          
+
+          ────────────────────────────────────────────────
+          """
+        print(header)
+        print(f"Current working directory: {os.getcwd()}")
 
     @app.before_request
     def authenticate(self):
@@ -115,22 +143,16 @@ class FileUploadAgent(PrivateGPTAgent):
             print(self.get_lang_message("authentication_failed"), flush=True)
             return
 
-        db = Path.absolute(Path(__file__).parent.parent / "database/documents.sql")
+       # personal_groups = self.list_personal_groups()
 
-        create_sql_table(db)
-        list_db(db)
-
+        groups = self.chosen_groups
+        #for group in groups:
+        db = Path.absolute(Path(__file__).parent.parent / f"database/documents.sql")
+        create_sql_table(db) #will only be created if not existent
 
         welcome_msg = f"{Color.OKGREEN}{self.get_lang_message('welcome')}{Color.ENDC}"
         print(welcome_msg, flush=True)
         logging.info(self.get_lang_message("user_interface_started"))
-
-        groups = self.chosen_groups
-
-        print("Documents in " + groups[0] + ":" )
-        available_documents = self.send_list_sources_request(groups[0])
-        sources = json.loads(available_documents)["sources"]
-        print(sources)
 
 
         while True:
@@ -138,24 +160,44 @@ class FileUploadAgent(PrivateGPTAgent):
                 user_input = input(f"{Color.OKBLUE}{self.get_lang_message('user_question')}{Color.ENDC}")
 
 
-                if user_input.strip().lower().startswith("delete "):
-                    sourceid = user_input.strip().lower()[7:]
+                if user_input.strip().lower() == "delete: unknown":
+                    for sourceid in sources:
+                        db_entry = get_from_sql_table(db, sourceid)
+                        if db_entry is None:
+                            print("deleting: " + sourceid)
+                            response = self.delete_source(sourceid)
+                            print(response)
+                        else:
+                            print("keeping: " + sourceid + " " + db_entry.file + " " + db_entry.content[:100])
+
+                elif user_input.strip().lower() == "delete: all":
+                    for sourceid in sources:
+                        response = self.delete_source(sourceid)
+                        print(response)
+
+                elif user_input.strip().lower().startswith("delete: "):
+                    sourceid = user_input.strip().lower()[8:]
                     print(sourceid)
 
                     #if success delete from db...
                     response = self.delete_source(sourceid)
                     print(response)
                     delete_from_sql_table(db, sourceid)
-                elif user_input.strip().lower() == "wipe unknown":
 
-                    for sourceid in sources:
-                        db_entry = get_from_sql_table(db, sourceid)
-                        if db_entry is None:
-                            print("deleting: " + sourceid)
-                            # todo delete from
-                        else:
-                            print("keeping: " + sourceid + " " + db_entry.file + " " + db_entry.content)
 
+                elif user_input.strip().lower() == "list pgpt":
+                    print("Documents in " + groups[0] + ":")
+                    available_documents = self.send_list_sources_request(groups[0])
+                    sources = json.loads(available_documents)["sources"]
+                    print(sources)
+
+                elif user_input.strip().lower() == "list local":
+                    list_db(db)
+
+                elif user_input.strip().startswith("info: "):
+                    sourceid = user_input.strip().lower()[6:]
+                    document = get_from_sql_table(db, sourceid)
+                    print("Id: " + document.id + " File: " + document.file + " User: " + document.user + " Group: " + document.groups + " Content: " + document.content )
 
 
                 elif user_input.strip().lower() == "exit":
@@ -164,11 +206,9 @@ class FileUploadAgent(PrivateGPTAgent):
                     logging.info(self.get_lang_message("session_ended"))
                     break
 
-                if user_input.strip().lower().startswith("upload file: "):
+                elif user_input.strip().lower().startswith("upload file: "):
 
                     file_path = user_input.strip()[13:].replace("\\", "\\\\").replace("\"", "")
-
-
                     # Get the file extension
                     file_extension = os.path.splitext(file_path)[1]
                     print(f"File Extension: {file_extension}")
@@ -176,17 +216,20 @@ class FileUploadAgent(PrivateGPTAgent):
                     content = ""
                     if file_extension == ".pdf":
                         content =  LoadersFactory().pdf(file_path)
+                        # todo pgpt is not happy with all formats
                     elif file_extension == ".csv":
                         content =  LoadersFactory().csv(file_path)
                     elif file_extension == ".xlsx":
                         content = LoadersFactory().xlsx(file_path)
+                    elif file_extension == ".md":
+                        content = LoadersFactory().markdown(file_path)
                     #todo add more sources
 
 
                     markdown = LoadersFactory().convert_documents_to_markdown(content)
                     print(markdown)
 
-                    result = self.send_create_source_request("test", markdown, groups)
+                    result = self.send_create_source_request(os.path.basename(file_path), markdown, groups)
                     parsed_result = json.loads(result)
 
                     if "documentId" in parsed_result:
@@ -202,11 +245,8 @@ class FileUploadAgent(PrivateGPTAgent):
                         print(f"{Color.FAIL}{self.get_lang_message('agent_error', error=error)}{Color.ENDC}",
                               flush=True)
 
-
-
-
-                elif not user_input.strip():
-                    result = self.send_create_source_request("test", user_input, groups)
+                elif user_input.strip().lower().startswith("upload content: "):
+                    result = self.send_create_source_request(user_input, user_input, groups)
                     parsed_result = json.loads(result)
 
                     if "documentId" in parsed_result:
@@ -239,6 +279,7 @@ if __name__ == '__main__':
 
     # Call this function right before the server starts
     agent.display_startup_header()
+    agent.display_help_header()
 
     # Starten des manuellen Chat-Interfaces
     agent.run()

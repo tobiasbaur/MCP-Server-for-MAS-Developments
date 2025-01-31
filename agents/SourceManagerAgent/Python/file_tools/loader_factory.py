@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from typing import List
 import pandas as pd
+os.environ["USER_AGENT"] = "Pgpt"
+
 
 from langchain.docstore.document import Document
 from langchain_community.document_loaders import (AZLyricsLoader, BSHTMLLoader,
@@ -39,9 +41,7 @@ class LoadersFactory:
     @staticmethod
     def xlsx(path: str) -> List[Document]:
         csv_file = path + '.csv'
-        # Read the Excel file into a DataFrame
         df = pd.read_excel(path)
-        # Save the DataFrame to a CSV file
         df.to_csv(csv_file, index=False)
 
         print(f"File converted successfully and saved as {csv_file}")

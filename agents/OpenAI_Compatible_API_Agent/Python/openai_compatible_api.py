@@ -37,6 +37,10 @@ async def store_request_headers(request: Request, call_next):
 async def chat_completions(request: ChatCompletionRequest):
     headers = getattr(request_context, "headers", {})
     client_api_key = str(headers['authorization']).split(" ")[1]
+    groups = []
+    if request.groups:
+        groups = request.groups
+    print("Groups: " + str(groups))
 
     if request.messages:
         #Check if this api-key already has a running instance
@@ -47,15 +51,25 @@ async def chat_completions(request: ChatCompletionRequest):
             index = indices[0]
         if index > -1:
             # if we already have an instance, just reuse it. No need to open new connection
+            print(instances[index].agent.chosen_groups)
+            print(groups)
+            if instances[index].agent.chosen_groups != groups:
+                print("⚠️ New Groups requested, switching to new Chat..")
+                config.set_value("groups", groups)
+                instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
             pgpt = instances[index].agent
+
         else:
             #otherwise connect via api-key
+            config.set_value("groups", groups)
             pgpt = PrivateGPTAPI(config, client_api_key=client_api_key)
             # remember that we already have an instance for the api key
             instance = ChatInstance(client_api_key, pgpt)
             instances.append(instance)
 
         if pgpt.logged_in:
+
+            print(request)
             response = pgpt.respond_with_context(request.messages, request.response_format)
             if "answer" not in response:
                 response["answer"] = "No Response received"

@@ -28,6 +28,10 @@ class Config:
             self.language = fallback_lang
         self.lang = languages[self.language]
 
+
+    def set_value(self, key, value):
+        self.data[key] = value
+
     def get_lang_message(self, key, **kwargs):
         """
         Sichere Methode zum Abrufen von Nachrichten aus dem Sprachwörterbuch.

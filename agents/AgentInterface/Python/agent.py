@@ -31,7 +31,7 @@ class PrivateGPTAgent:
         self.server_port = config.get("server_port")
         self.email = config.get("email")
         self.password = config.get("password")
-        self.chosen_groups = config.get("groups", [])
+        self.chosen_groups = config.data["groups"] or []
         self.language = config.get("language", "en")  # Standard ist Englisch
         self.api_key = config.get("api_key", "default_api_key")  # Stellen Sie sicher, dass ein API-Key gesetzt ist
 
@@ -329,12 +329,13 @@ class PrivateGPTAgent:
         try:
             response = self.network_client.send_request(payload)
             logging.info(self.lang["received_response"].format(response=response))
-            resp = response.get("content")
+            resp = response.get('content')
+
             if resp.get("status") == 200 and resp.get("message") == "success":
                 return json.dumps(resp["data"])
             else:
                 return json.dumps(
-                    {"error": resp.get("message", self.lang["agent_error"].format(error=self.lang["unknown_error"]))})
+                    {"error": response.get("message", self.lang["agent_error"].format(error=self.lang["unknown_error"]))})
         except NetworkError as e:
             error_msg = self.lang["agent_error"].format(error=str(e))
             logging.error(f"❌ {error_msg}")
