@@ -3108,19 +3108,19 @@ async run() {
 
                     const { question, usePublic, groups, language } = args;
 
-                    // Konflikt zwischen `usePublic` und `groups` lösen
-                    if (groups && groups.length > 0) {
-                        // ############## REPLACE if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
-                        args.usePublic = true;
-                    }
+					// Konflikt zwischen `usePublic` und `groups` lösen
+					if (usePublic && groups && groups.length > 0) {
+						if (!isanonymousModeEnabled) logEvent('system', 'swreg', l.prefix_chatWarning, t.publicGroupsConflictWarning, 'warn');
+						args.usePublic = false;
+					}
 
-                    try {
-                        // Loggen der Chat-Anfrage
-                        if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
-                            .replace('${question}', question)
-                            .replace('${usePublic}', usePublic)
-                            .replace('${groups}', "")
-                            .replace('${language}', language), 'info');
+					try {
+						// Loggen der Chat-Anfrage
+						if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatRequest, t.sendingChatRequest
+							.replace('${question}', question)
+							.replace('${usePublic}', usePublic)
+							.replace('${groups}', JSON.stringify(groups))
+							.replace('${language}', language), 'info');
 
                         const response = await this.axiosInstance.post(
                             '/chats',
