@@ -70,6 +70,9 @@ async def chat_completions(request: ChatCompletionRequest):
             response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
             if "answer" not in response:
                 response["answer"] = "No Response received"
+            if "answer" in response and response["answer"] == "error":
+                if pgpt.login():
+                    pgpt.create_chat()
         else:
             response = {
                 "chatId": "0",

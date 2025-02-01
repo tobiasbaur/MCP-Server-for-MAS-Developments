@@ -112,7 +112,7 @@ class PrivateGPTAPI:
             response = self.session.patch(url, json=payload)
             #response.raise_for_status()
             data = response.json()
-            answer = data.get('data', {}).get('answer', "No answer provided.")
+            answer = data.get('data', {}).get('answer', "error")
             if answer.startswith("{\"role\":"):
                  answerj = json.loads(answer)
                  data["data"]["answer"] = answerj["content"]
@@ -136,7 +136,10 @@ class PrivateGPTAPI:
 
     def respond_with_context(self, messages, response_format=None, request_tools=None):
         user_input = f'{messages[len(messages) - 1].content}'
-        print(f"💁 Request: {messages[len(messages) - 1].content}")
+        for message in messages:
+            if message.role == "system":
+                user_input = str(message) + " " + str(messages[len(messages) - 1])
+        print(f"💁 Request: " + user_input)
 
         # PGPT manages history and context itself so we don't need to forward the history.
         add_context = False

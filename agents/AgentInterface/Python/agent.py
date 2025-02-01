@@ -213,7 +213,10 @@ class PrivateGPTAgent:
             return self.query_private_gpt(user_input, groups=groups)
 
     def respond_with_context(self, messages, response_format=None, request_tools = None, command="chat"):
-        user_input =  f'{messages[len(messages)-1].content}'
+        user_input = f'{messages[len(messages) - 1].content}'
+        for message in messages:
+            if message.role == "system":
+                user_input = str(message) + " " + str(messages[len(messages) - 1])
 
         # PGPT manages history and context itself so we don't need to forward the history.
         add_context = False
@@ -222,6 +225,7 @@ class PrivateGPTAgent:
             user_input += "\nHere is some context about the previous conversation:\n"
             for message in messages:
                 user_input += f"{message.role}: {message.content}\n"
+
         if response_format is not None:
             user_input += self.add_response_format(response_format)
 

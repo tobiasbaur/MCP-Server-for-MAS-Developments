@@ -21,7 +21,7 @@ if __name__ == "__main__":
     try:
         chat_completion = client.chat.completions.create(
             model="pgpt",
-            messages=[{"role": "user", "content": "Say this is a test"}],
+            messages=[{"role": "system", "content": "Be funny."}, {"role": "user", "content": "Say this is a test"}],
             stream=stream,
             extra_body={
                 "groups": []
