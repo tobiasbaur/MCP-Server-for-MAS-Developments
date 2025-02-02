@@ -43,37 +43,37 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
        Copy the `pgpt_api_proxy.json.example` file to `pgpt_api_proxy.json` e.g. with  `cp  .\agents\OpenAI_Compatible_API_Agent\pgpt_api_proxy.json.example  .\agents\OpenAI_Compatible_API_Agent\pgpt_api_proxy.json`
        Make sure that the `pgpt_api_proxy.json` is configured correctly and contains all necessary fields. The file should look like this:
        ```json
-       {
-               "base_url": "<Url to your private GPT instance>",
-               "proxy_user": "<Proxy User>",
-               "proxy_password": "<Proxy Password>",
-               "access_header": "<Access Header>", // The access header will be used instead of User and Password, if available
-               "groups": ["<Groups to access>"],
-               "language": "en",
-               "use_public": true,
-               "api_ip": "0.0.0.0",
-               "api_port": 8001,
-               "whitelist_keys": ["key1", "key2"] // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
-       }
+        {
+            "base_url": "<Url to your private GPT instance>",
+            "proxy_user": "<Proxy User>",
+            "proxy_password": "<Proxy Password>",
+            "access_header": "<Access Header>", // The access header will be used instead of User and Password, if available
+            "groups": ["<Groups to access>"],
+            "language": "en",
+            "use_public": true,
+            "api_ip": "0.0.0.0",
+            "api_port": 8001,
+            "whitelist_keys": ["key1", "key2"] // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
+        }
        ```
       - 4.2 **OpenAI-Compatible API via MCP Server:**
 
        Copy the `pgpt_openai_api_mcp.json.example` file to `pgpt_openai_api_mcp.json` e.g. with  `cp .\pgpt_openai_api_mcp.json.example .\pgpt_openai_api_mcp.json`
        Make sure that the `pgpt_openai_api_mcp.json` is configured correctly and contains all necessary fields. The file should look like this:
        ```json
-       {
+        {
             "email": "<Your PGPT account>",
             "password": "<Your PGPT password>",
             "groups": ["<Groups to access>"],
             "language": "en",
             "api_ip": "0.0.0.0",
             "api_port": 8002,
-			"whitelist_keys": ["key1", "key2"], // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
-			"mcp_server": {
-				"host": "172.24.123.123",
-				"port": 5000
-			}
-       }
+            "whitelist_keys": ["key1", "key2"], // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
+            "mcp_server": {
+                "host": "172.24.123.123",
+                "port": 5000
+            }
+        }
        ```
      
     
