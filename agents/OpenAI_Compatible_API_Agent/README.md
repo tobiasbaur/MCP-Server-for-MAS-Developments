@@ -68,7 +68,7 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
             "language": "en",
             "api_ip": "0.0.0.0",
             "api_port": 8002,
-            "whitelist_keys": ["key1", "key2"], // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
+			"whitelist_keys": ["key1", "key2"], // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
 			"mcp_server": {
 				"host": "172.24.123.123",
 				"port": 5000
