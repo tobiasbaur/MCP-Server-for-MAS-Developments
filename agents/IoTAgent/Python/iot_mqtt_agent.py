@@ -339,81 +339,78 @@ def archive_file(file_path):
         logging.error(error_message)
 
 # Funktion zur Generierung eines logischen Satzes über den Chatbot-Agenten mit Retry-Mechanismus
-def generate_logical_sentence(parameters, language_code, config, max_retries=3, wait_seconds=5):
+def generate_logical_sentence(parameters, language_code, config, wait_seconds=5):
     """
-    Sendet die Parameter an den Chatbot-Agenten und erhält einen logischen Satz zurück.
-    Bei fehlender Antwort wird nach einer Wartezeit erneut versucht.
-
-    :param parameters: Dictionary mit den Parametern.
-    :param language_code: Sprache für die Generierung ('de', 'en').
-    :param config: Gesamte Konfigurationsdaten
-    :param max_retries: Maximale Anzahl der Wiederholungsversuche.
-    :param wait_seconds: Wartezeit in Sekunden zwischen den Versuchen.
-    :return: Generierter Satz als String.
+    Sendet die Parameter an den Chatbot-Agenten in Form einer FIPA-ACL-Anfrage und erhält einen logischen Satz.
+    Falls eine FIPA-ACL failure-Nachricht empfangen wird (z. B. wegen Verbindungsproblemen), wird ausgegeben,
+    dass der Chatbot-Agent ein Problem meldet und der IoT-Agent wartet, bis eine OK-Antwort kommt.
+    Sobald eine OK-Antwort empfangen wird, wird zusätzlich ausgegeben, dass das Problem behoben ist.
     """
-    global current_language
-    attempt = 0
-    while attempt < max_retries:
+    while True:
         try:
-            # Erstellen des Prompts
-            prompt_message = languages[language_code]["sending_request_to_chatbot"].format(attempt=attempt + 1)
-            logging.debug(prompt_message)
+            # Erstellen des Prompts aus den Parametern
+            prompt = (
+                "Erstelle einen logischen Satz aus den folgenden JSON-Parametern:\n" +
+                json.dumps(parameters, ensure_ascii=False, indent=4)
+            )
 
-            prompt = "Erstelle einen logischen Satz aus den folgenden json Parametern:\n" + json.dumps(parameters, ensure_ascii=False, indent=4)
-
-            # Erstellen des Payloads
-            payload = {
-                "question": prompt,
-                "usePublic": True,  # Setzen auf True, wie im PowerShell-Skript
-                "groups": [],
-                "language": language_code
+            # Aufbau der FIPA-ACL-Anfrage
+            acl_payload = {
+                "performative": "request",
+                "sender": "IoT_MQTT_Agent",
+                "receiver": "Chatbot_Agent",
+                "language": "fipa-sl",
+                "ontology": "fujitsu-iot-ontology",
+                "content": {
+                    "question": prompt,
+                    "usePublic": True,
+                    "groups": [],
+                    "language": language_code
+                }
             }
 
-            # Setzen der Header, einschließlich API-Schlüssel
             headers = {
                 "Content-Type": "application/json",
                 "X-API-KEY": config['chatbot_agent']['api_key']
             }
 
-            # Senden der Anfrage an den Chatbot-Agenten
-            response = requests.post(config['chatbot_agent']['api_url'], json=payload, headers=headers, timeout=10)
+            response = requests.post(
+                config['chatbot_agent']['api_url'],
+                json=acl_payload,
+                headers=headers,
+                timeout=10
+            )
+            data = response.json()
 
-            # Loggen der vollständigen Antwort
-            chatbot_response_message = languages[language_code]["chatbot_response"].format(response=response.text)
-            logging.debug(chatbot_response_message)
-
-            # Überprüfen des Statuscodes
-            if response.status_code == 200:
-                data = response.json()
-                # Hier ändern wir 'answer' zu 'sentence'
-                generated_sentence = data.get("answer", "").strip('"')
-                if generated_sentence:
-                    print(Color.color_text(f"Chatbot-Antwort: {generated_sentence}", Color.OKGREEN))
-                if not generated_sentence:
-                    warning_message = languages[language_code]["empty_answer_field"]
-                    logging.warning(warning_message)
-                    raise ValueError("Empty 'answer' field in the response.")
-                return generated_sentence
-            else:
-                error_message = languages[language_code]["chatbot_error_status"].format(status_code=response.status_code, response=response.text)
-                logging.error(error_message)
-                raise ConnectionError(f"Statuscode {response.status_code}")
-        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, ValueError) as e:
-            attempt += 1
-            communication_error_message = languages[language_code]["communication_error"].format(e=e, attempt=attempt, max_retries=max_retries)
-            logging.error(communication_error_message)
-            if attempt < max_retries:
-                waiting_message = languages[language_code]["waiting_before_retry"].format(wait_seconds=wait_seconds)
-                logging.info(waiting_message)
+            # Prüfen, ob der Chatbot-Agent ein Failure sendet
+            if data.get("performative") == "failure":
+                reason = data.get("content", {}).get("reason", "Kein Grund angegeben")
+                error_msg = f"ChatBot Agent meldet Verbindungsproblem: {reason}. Warte auf Wiederherstellung..."
+                logging.error(error_msg)
+                print(error_msg, flush=True)
                 time.sleep(wait_seconds)
-            else:
-                max_retries_reached_message = languages[language_code]["max_retries_reached"]
-                logging.error(max_retries_reached_message)
-                return languages[language_code]["max_retries_reached"]
+                continue  # Wiederhole die Anfrage
+
+            # Falls keine Failure vorliegt, wird der erwartete Satz aus dem Feld "answer" entnommen.
+            generated_sentence = data.get("answer", "")
+            if not generated_sentence:
+                raise ValueError("Empty 'answer' field in normal response.")
+            
+            # Ausgabe, dass nun ein OK empfangen wurde und das Problem behoben ist.
+            ok_msg = "OK-Antwort empfangen. Verbindung stabil."
+            logging.info(ok_msg)
+            print(ok_msg, flush=True)
+            
+            return generated_sentence
+
+        except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, ValueError) as e:
+            logging.error(f"Error during request: {e}. Warte auf Wiederholung...")
+            time.sleep(wait_seconds)
         except Exception as e:
-            unknown_error_message = languages[language_code]["error_in_interpret_and_output"].format(e=e)
-            logging.error(unknown_error_message)
-            return languages[language_code]["error_in_interpret_and_output"].format(e=e)
+            logging.error(f"Unexpected error: {e}. Warte auf Wiederholung...")
+            time.sleep(wait_seconds)
+
+   
 
 # Funktion zur Generierung lesbarer Sätze basierend auf konfigurierten Sprachen
 def interpret_and_output(record, local_handlers, config):

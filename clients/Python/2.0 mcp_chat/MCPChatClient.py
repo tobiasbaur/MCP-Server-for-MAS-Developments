@@ -17,7 +17,7 @@ def send_mcp_request(server_ip, server_port, token, question, use_public, groups
     """
     # Prepare the request payload
     payload = {
-        "command": "chat",
+        "command": "oai_comp_api_chat",
         "token": token,
         "arguments": {
             "question": question,

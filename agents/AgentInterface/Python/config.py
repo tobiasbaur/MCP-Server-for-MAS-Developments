@@ -13,20 +13,24 @@ class ConfigError(Exception):
 class Config:
 
     def __init__(self, config_file="config.json", required_fields=None):
-        self.required_fields = required_fields
-        if required_fields is None:
-            self.required_fields = []
-
+        self.required_fields = required_fields if required_fields is not None else []
         self.config_file = config_file
         self.data = self.load_config()
-        self.validate()
+
+        # 🔥 Sprache wird **vor** validate() gesetzt
         self.language = self.get("language", "en")
         if self.language not in languages:
             # Fallback zu Englisch, wenn die angegebene Sprache nicht unterstützt wird
             fallback_lang = "en"
-            logging.warning(languages[fallback_lang]['unsupported_language_fallback'].format(language=self.language))
+            logging.warning(f"⚠️ Unsupported language '{self.language}', falling back to English.")
             self.language = fallback_lang
-        self.lang = languages[self.language]
+        self.lang = languages[self.language]  # ✅ Setzt self.lang vor validate()
+
+        self.validate()
+
+
+    def set_value(self, key, value):
+        self.data[key] = value
 
     def get_lang_message(self, key, **kwargs):
         """

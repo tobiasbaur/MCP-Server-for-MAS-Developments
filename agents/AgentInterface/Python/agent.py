@@ -13,8 +13,13 @@ class GroupValidationError(Exception):
 
 class PrivateGPTAgent:
     def __init__(self, config):
-        self.server_ip = config.get("server_ip")
-        self.server_port = config.get("server_port")
+        # mcp_server-Daten aus dem config-Objekt lesen
+        self.mcp_config = config.get("mcp_server")
+        # Lese host und port
+        self.mcp_host = self.mcp_config.get("host")
+        self.mcp_port = self.mcp_config.get("port")
+        self.server_ip = self.mcp_host
+        self.server_port = self.mcp_port
         self.email = config.get("email")
         self.password = config.get("password")
         self.chosen_groups = config.get("groups", [])

@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import requests
@@ -44,9 +45,9 @@ class PrivateGPTAPI:
         if self.access_header == "":
             self.access_header = None
 
-        self.groups = config.get("groups", [])
+        self.chosen_groups = config.data["groups"] or []
         self.language = config.get("language", "en")
-        self.use_public = config.get("use_public", False)
+        self.use_public = config.get("use_public", True)
         self.whitelist_keys = config.get("whitelist_keys", [])
         self.logged_in = False
 
@@ -88,7 +89,7 @@ class PrivateGPTAPI:
     def create_chat(self):
         """Start a new chat session."""
         url = f"{self.base_url}/chats"
-        payload = {"language": self.language, "question": "Hello", "usePublic": self.use_public, "groups": self.groups}
+        payload = {"language": self.language, "question": "Hello", "usePublic": self.use_public, "groups": self.chosen_groups}
         try:
             response = self.session.post(url, json=payload)
             response.raise_for_status()
@@ -111,10 +112,11 @@ class PrivateGPTAPI:
             response = self.session.patch(url, json=payload)
             #response.raise_for_status()
             data = response.json()
-            answer = data.get('data', {}).get('answer', "No answer provided.")
+            answer = data.get('data', {}).get('answer', "error")
             if answer.startswith("{\"role\":"):
                  answerj = json.loads(answer)
                  data["data"]["answer"] = answerj["content"]
+                 data["data"]["chatId"] = "0"
 
             print(f"💡 Response: {answer}")
             return data
@@ -130,11 +132,14 @@ class PrivateGPTAPI:
                 return data
             except:
                 print(f"❌ Failed to get response: {e}")
-                return {}
+                return {"error": f"❌ Failed to get response: {e}"}
 
-    def respond_with_context(self, messages):
+    def respond_with_context(self, messages, response_format=None, request_tools=None):
         user_input = f'{messages[len(messages) - 1].content}'
-        print(f"💁 Request: {messages[len(messages) - 1].content}")
+        for message in messages:
+            if message.role == "system":
+                user_input = str(message) + " " + str(messages[len(messages) - 1])
+        print(f"💁 Request: " + user_input)
 
         # PGPT manages history and context itself so we don't need to forward the history.
         add_context = False
@@ -144,12 +149,46 @@ class PrivateGPTAPI:
             for message in messages:
                 user_input += f"{message.role}: {message.content}\n"
 
+        if response_format is not None:
+            print("Response format: " + str(response_format))
+            user_input += add_response_format(response_format)
+
+        if request_tools is not None:
+            user_input += add_tools(request_tools)
+
+
         result = self.query_private_gpt(user_input)
+
+
         if 'data' in result:
+            if request_tools is not None:
+                result.data.function = "test"
             return result['data']
+        elif 'error' in result:
+            # Try to login again and send the query once more on error.
+            if self.login():
+                if self.create_chat():
+                    result = self.query_private_gpt(user_input)
+                    if 'data' in result:
+                        return result['data']
+                    else:
+                        return result
+
         else:
             return result
 
+def add_response_format(response_format):
+    #prompt = "\nPlease fill in the following template with realistic and appropriate information. Be creative. The field 'type' defines the output format. In your reply, only return the generated json\n"
+    prompt = "\nPlease fill in the following json template with realistic and appropriate information. In your reply, only return the generated json. If you can't answer return an empty json.\n"
+    prompt += json.dumps(response_format)
+    return prompt
+
+
+def add_tools(response_tools):
+    prompt = "\nPlease use the following provided tools. In your reply, only return the generated result of the tool\n"
+    for tool in response_tools:
+        prompt += json.dumps(tool)
+    return prompt
 
 def decrypt_api_key(api_key):
     """
