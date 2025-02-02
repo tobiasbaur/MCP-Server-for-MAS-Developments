@@ -62,16 +62,17 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
        Make sure that the `pgpt_openai_api_mcp.json` is configured correctly and contains all necessary fields. The file should look like this:
        ```json
        {
-            "server_ip": "127.0.0.1",
-            "server_port": 5000,
             "email": "<Your PGPT account>",
             "password": "<Your PGPT password>",
             "groups": ["<Groups to access>"],
             "language": "en",
             "api_ip": "0.0.0.0",
             "api_port": 8002,
-            "whitelist_keys": ["key1", "key2"] // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
-
+            "whitelist_keys": ["key1", "key2"], // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
+			"mcp_server": {
+				"host": "172.24.123.123",
+				"port": 5000
+			}
        }
        ```
      
