@@ -32,6 +32,10 @@ class Config:
     def set_value(self, key, value):
         self.data[key] = value
 
+
+    def set_value(self, key, value):
+        self.data[key] = value
+
     def get_lang_message(self, key, **kwargs):
         """
         Sichere Methode zum Abrufen von Nachrichten aus dem Sprachwörterbuch.
