@@ -4,10 +4,14 @@
 The PrivateGPT OpenAI-Compatible API Agent is a client that communicates with a private GPT server and provides an interface to openai-compatible libraries and tools.
 It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGPT API directly, Variation 2 (*openai_mcp_api.py*) uses communicates through the PGPT MCP Server.
 
+---
+
 ## Prerequisites
 - Python 3.8 or higher
 - Access to the PrivateGPT server
 - For Variation 2, access to MCP server
+
+---
 
 ## Setup
 1. **Clone the repository:**
@@ -75,7 +79,7 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
             }
         }
        ```
-     
+
     
 5. **Start the AI agents:**
    - 5.1 **Start the OpenAI-compatible API agent that uses the PGPT API directly:**
@@ -88,6 +92,13 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
      python -m agents.OpenAI_Compatible_API_Agent.Python.openai_mcp_api
      ```
 
+---
+
 ## Utilisation
 - **Use libraries (like litellm, ollama, smolagents) or tools (like Msty) to use PGPT with the OpenAI API interface:**
    Use the API Key you created with generate_api_key.py when required.
+   
+---
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.

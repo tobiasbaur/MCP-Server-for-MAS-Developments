@@ -1,11 +1,9 @@
 # Fujitsu PrivateGPT MQTT IoT Agent
-
 The **IoT MQTT Agent** is a Python application that connects to an MQTT broker, processes vehicle data, and logs messages as JSON records. In addition, it communicates with a Chatbot Agent to generate human-readable, logical sentences from raw data. This communication is performed using the standardized FIPA ACL (Agent Communication Language) protocol, ensuring interoperability in multi-agent environments.
 
 ---
 
 ## Features
-
 - **MQTT Communication:**  
   Connects to an MQTT broker to subscribe to topics and receive vehicle data.
 
@@ -33,7 +31,6 @@ The **IoT MQTT Agent** is a Python application that connects to an MQTT broker, 
 ---
 
 ## How It Works
-
 1. **Configuration Loading:**  
    The agent loads its settings from a JSON configuration file (default: `pgpt_iot_agent.json`), which includes details for MQTT, SFTP, file handling, and the Chatbot Agent.
 
@@ -55,7 +52,6 @@ The **IoT MQTT Agent** is a Python application that connects to an MQTT broker, 
 ---
 
 ## Requirements
-
 - **Python 3.x**
 
 - **Python Libraries:**  
@@ -67,3 +63,5 @@ The **IoT MQTT Agent** is a Python application that connects to an MQTT broker, 
 
 ---
 
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
