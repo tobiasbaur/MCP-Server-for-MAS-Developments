@@ -1,84 +1,194 @@
-# PrivateGPT Agent
 
-## Description
-The PrivateGPT Agent is a client that communicates with a private GPT server to answer questions and provide information. The agent supports both local knowledge data and server-based responses.
+# PrivateGPT ChatBot Agent
+
+## Overview
+
+The **PrivateGPT ChatBot Agent** is a core component of the Fujitsu PrivateGPT multi-agent system. It serves as a client that communicates with a private GPT server to answer questions and provide information. The agent supports both local knowledge data and server-based responses and uses **FIPA ACL (Agent Communication Language)** to standardize communications with other agents in the system.
+
+## Features
+
+- **Multi-Agent Communication via FIPA ACL:**  
+  - Processes structured messages with standard fields such as `performative`, `sender`, `receiver`, `ontology`, and `content`.
+  - Returns FIPA ACL failure messages when a connection to the MCP server cannot be established.
+  
+- **Flask API Server:**  
+  - Provides RESTful endpoints (e.g., `/ask`, `/logs`, `/status`) using Flask.
+  - Serves requests with Waitress, ensuring production-readiness.
+  - Implements Cross-Origin Resource Sharing (CORS) for all origins (`origins: "*"`) so that requests from any domain are allowed.
+  
+- **Authentication:**  
+  - Endpoints (except OPTIONS and `/status`) require an API key sent via the `X-API-KEY` header.
+  
+- **MCP Server Connectivity:**  
+  - Validates connectivity to the MCP server (as defined in `config.json`) before processing requests.
+  
+- **Logging:**  
+  - Detailed logs are maintained for both the agent (in `agent.log`) and the Flask server (in `flask.log`).
 
 ## Prerequisites
-- Python 3.8 or higher
-- Access to the PrivateGPT server
+
+- **Python:** 3.8 or higher
+- **Dependencies:**  
+  Install required packages as listed in the corresponding `requirements.txt` (e.g., Flask, waitress, flask-cors, paho-mqtt, paramiko, etc.)
 
 ## Setup
-1. **Clone the repository:**
+
+1. **Clone the Repository:**
+
+   ```bash
+   git clone https://github.com/pgpt-dev/MCP-Server-for-MAS-Developments.git
+   cd MCP-Server-for-MAS-Developments
+   ```
+
+2. **(Optional) Create and Activate a Virtual Environment:**
+
+   - **Windows:**
+     ```bash
+     python -m venv venv
+     .\venv\Scripts\activate
+     ```
+     
+   - **Unix/MacOS:**
+     ```bash
+     python -m venv venv
+     source venv/bin/activate
+     ```
+
+3. **Install Dependencies:**
+
+   ```bash
+   pip install -r agents/ChatBotAgent/requirements.txt
+   ```
+
+4. **Configure the Agent:**
+
+   Copy the example configuration file and adjust it to your environment:
+
+   ```bash
+   cp agents/ChatBotAgent/config.json.example agents/ChatBotAgent/config.json
+   ```
+
+   **Example `config.json`:**
+
+   ```json
+   {
+       "email": "<YOUR EMAIL>",
+       "password": "<YOUR PASSWORD>",
+       "api_ip": "0.0.0.0",
+       "api_port": 5001,
+       "api_key": "<YOUR_API_KEY>",
+       "mcp_server": {
+           "host": "172.24.123.123",
+           "port": 5000
+       },
+       "language": "en",
+       "groups": ["<Your Group>"]
+   }
+   ```
+
+   **Note:** All parameters, including `email` and `password`, are read exclusively from this JSON file.
+
+## Running the Agent
+
+To start the ChatBot Agent, ensure you're in the repository's root directory and run:
+
 ```bash
-git clone [https://github.com/pgpt-dev/MCP-Server-for-MAS-Developments.git](https://github.com/pgpt-dev/MCP-Server-for-MAS-Developments.git)
-cd MCP-Server-for-MAS-Developments
+python -m agents.ChatBotAgent.Python.chatbot_agent
 ```
 
-2. **Optional: Create and activate a virtual environment:**
-    ```bash
-    python -m venv venv
-    ```
+The agent will launch a Flask API server (using Waitress) on the configured `api_ip` and `api_port`, and it will start its internal processing loop in a separate thread.
 
-    - **Windows:**
-        ```bash
-        .\venv\Scripts\activate
-        ```
+## API Endpoints
 
-    - **Unix/MacOS:**
-        ```bash
-        source venv/bin/activate
-        ```
+### `/ask` (POST)
 
-3. **Install dependencies:**
-    ```bash
-    pip install -r .\agents\ChatBotAgent\requirements.txt
-    ```
+- **Purpose:**  
+  Accepts a question for the ChatBot Agent. The endpoint supports both a **FIPA ACL** structured message and a legacy JSON format.
+  
+- **Authentication:**  
+  Requires the `X-API-KEY` header with the correct API key.
+  
+- **FIPA ACL Request Example:**
 
-4. **Customise configuration file:**
-    Copy the `config.json.example` file to `config.json` e.g. with  `cp .\agents\ChatBotAgent\config.json.example .\agents\ChatBotAgent\config.json`
-    Make sure that the `config.json` is configured correctly and contains all necessary fields. The file should look like this:
-    ```json
-    {
-        "server_ip": "<IP of your MCP Instance>",
-        "server_port": 5000,
-        "email": "<YOUR EMAIL (USER) for PGPT>",
-        "password": "<YOUR PASSWORD>",
-        "language": "en",
-        "groups": ["<Create a Group on PGPT for the ChatBot>"]
-    }
-    ```
+  ```json
+  {
+      "performative": "request",
+      "sender": "IoT_MQTT_Agent",
+      "receiver": "Chatbot_Agent",
+      "ontology": "fujitsu-iot-ontology",
+      "content": {
+          "question": "What is the system status?",
+          "usePublic": false,
+          "groups": ["group1"],
+          "language": "en"
+      }
+  }
+  ```
 
-    **Note:** All parameters, including `email` and `password`, are read **exclusively from the JSON file**. No environment variables** are used.
+- **Legacy JSON Request Example:**
 
-5. **Start the AI agent, make sure you're in the MCP-Server-for-MAS-Developments - directory:**
-    ```bash
-    python -m agents.ChatBotAgent.Python.chatbot_agent
-    ```
+  ```json
+  {
+      "question": "What is the system status?",
+      "usePublic": false,
+      "groups": ["group1"],
+      "language": "en"
+  }
+  ```
 
-## Utilisation
-- **Ask a question:**
-   Enter your question and press Enter.
+- **Response:**  
+  Returns a JSON object containing the generated answer from the PrivateGPT server. If the MCP server connection fails, a FIPA ACL failure message is returned.
 
-- **Exit:**
-    Enter `exit` to exit the agent.
+### `/logs` (GET)
 
+- **Purpose:**  
+  Retrieves the contents of the Flask log file (`flask.log`) for debugging purposes.
 
-## Example
+### `/status` (GET)
+
+- **Purpose:**  
+  Provides a simple JSON message confirming that the agent is running. This endpoint does **not** require authentication.
+
+## Multi-Agent Communication & FIPA ACL
+
+The ChatBot Agent uses **FIPA ACL** to structure its communications with other agents. Key points include:
+
+- **Standardized Message Fields:**  
+  Each FIPA ACL message includes:
+  - `performative` (e.g., "request", "failure")
+  - `sender` and `receiver` identifiers
+  - `ontology` defining the domain (e.g., `fujitsu-iot-ontology`)
+  - `content` containing the actual data or question
+  
+- **Failure Handling:**  
+  If the MCP server connection fails during a request to `/ask`, the agent returns a FIPA ACL failure message to inform the sender of the issue.
+
+This structured messaging facilitates reliable interactions in a multi-agent system.
+
+## Logging & Debugging
+
+- **Agent Logs:**  
+  Key events, errors, and status messages are logged to `agent.log`.
+
+- **Flask Logs:**  
+  Flask-specific errors and request logs are maintained in `flask.log`.
+
+These logs are essential for troubleshooting and monitoring the agent's operation.
+
+## Example Conversation
+
 ```plaintext
-🎉 Welcome to the PrivateGPT Agent. Ask your question or enter ‘exit’ to exit.
+🎉 Welcome to the PrivateGPT ChatBot Agent.
 You: What is your name?
-Agent: I am called PrivateGPT.
-You: Say something about NIS2
-Agent: The NIS2 Directive aims to strengthen cybersecurity in the European Union by imposing stricter requirements on companies and organisations operating critical infrastructure.
-Sources:
-
-┌───────┬───────────────────────┐
-│ Index │ Quelle                │
-├───────┼───────────────────────│
-│ 1     │ EU-Richtlinie NIS2    │
-│ 2     │ Cybersicherheitsgesetz│
-└───────┴───────────────────────┘
-You: exit
-👋 Goodbye.
+Agent: I am the PrivateGPT ChatBot Agent.
+You: Provide system status.
+Agent: The system is running normally.
 ```
- 
+
+## License
+
+*Include your license information here.*
+
+## Contact
+
+For questions or issues, please contact the project maintainers at [your-email@example.com](mailto:your-email@example.com).

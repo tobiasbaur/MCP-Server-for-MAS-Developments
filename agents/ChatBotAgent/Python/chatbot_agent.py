@@ -17,7 +17,8 @@ from ...AgentInterface.Python.language import languages
 app = Flask(__name__)
 
 # CORS-Konfiguration (anpassen, falls erforderlich)
-CORS(app, resources={r"/*": {"origins": "http://192.168.100.185:5500"}}, supports_credentials=False)
+#CORS(app, resources={r"/*": {"origins": "http://<YOUR IP>:5500"}}, supports_credentials=False)
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=False)
 
 # Konfiguration laden – hier sind die Felder "server_ip" und "server_port" nicht mehr erforderlich
 try:
