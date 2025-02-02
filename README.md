@@ -64,6 +64,7 @@
     - [SSL Validation](#ssl-validation)
     - [Encryption](#encryption)
     - [Group Restrictions](#group-restrictions)
+	- [Enable OpenAI compatible API] (#enable-openai-compatible-api`
     - [Feature Activation/Deactivation](#feature-activationdeactivation)
   - [Usage](#usage)
     - [Available Tools](#available-tools)
@@ -497,6 +498,13 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 | Key                 | Description                                                                                     | Example Value |
 |---------------------|-------------------------------------------------------------------------------------------------|---------------|
 | **RESTRICTED_GROUPS** | Setting `true` prevents client access to `assignableGroups`.                                  | `false`       |
+
+---
+
+## `Enable OpenAI compatible API`
+| Key                 | Description                                                                                     | Example Value |
+|---------------------|-------------------------------------------------------------------------------------------------|---------------|
+| **ENABLE_OPEN_AI_COMP_API** | Setting `true` allows the compatibility mode for OpenAI API.                            | `false`       |
 
 ---
 
