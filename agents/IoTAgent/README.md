@@ -28,7 +28,7 @@ The **IoT MQTT Agent** is a Python application that connects to an MQTT broker, 
   - **Content:** (The JSON parameters used to generate a logical sentence)
 
 - **SFTP File Transfer:**  
-  When log files exceed a size threshold, they are automatically uploaded to a remote SFTP server and archived locally.
+  When log files exceed a size threshold, they are automatically uploaded to a remote SFTP server, connected to Private GPT bulk upload services, and archived locally.
 
 ---
 
@@ -67,10 +67,3 @@ The **IoT MQTT Agent** is a Python application that connects to an MQTT broker, 
 
 ---
 
-## Installation
-
-1. **Clone the Repository:**
-
-   ```bash
-   git clone https://your-repository-url.git
-   cd your-repository-directory
