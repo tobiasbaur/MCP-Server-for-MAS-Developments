@@ -64,7 +64,7 @@
     - [SSL Validation](#ssl-validation)
     - [Encryption](#encryption)
     - [Group Restrictions](#group-restrictions)
-	- [Enable OpenAI compatible API] (#enable-openai-compatible-api`
+	- [Enable OpenAI compatible API] (#enable-openai-compatible-api)
     - [Feature Activation/Deactivation](#feature-activationdeactivation)
   - [Usage](#usage)
     - [Available Tools](#available-tools)
