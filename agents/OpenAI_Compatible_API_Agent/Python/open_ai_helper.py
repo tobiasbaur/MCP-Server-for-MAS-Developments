@@ -23,7 +23,6 @@ class Message(BaseModel):
     content: str
 
 
-
 class ChatCompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     messages: List[Message]
@@ -108,17 +107,29 @@ async def _resp_async_generator(response: json, request):
 
 
 
-def get_models():
-    return {
-        "object": "list",
-        "data": [
+
+
+models = [
+    {
+        "id": "pgpt-mistral-nemo-12b",
+        "object": "model",
+        "owned_by": "fujitsu",
+        "created": 1609459200,
+        "root": "mistral",
+        "parent": None,
+        "ready": True,
+        "permissions": [
             {
-                "id": "pgpt-mistral-nemo-12b",
-                "object": "model",
-                "created": 1686935002,
-                "owned_by": "Fujitsu"
+                "id": "model-permission-1",
+                "object": "model_permission",
+                "created": 1612876732,
+                "allow_create_engine": True,
+                "allow_fine_tuning": False,
+                "allow_sampling": True,
+                "allow_search_indices": True,
+                "allow_view": True,
+                "organization": "*"
             }
         ]
     }
-
-
+]
