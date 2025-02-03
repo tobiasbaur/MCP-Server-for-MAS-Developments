@@ -284,10 +284,12 @@ const enableListSources     = getEnvVar('ENABLE_LIST_SOURCES', ['Functions', 'EN
 const enableStoreUser       = getEnvVar('ENABLE_STORE_USER', ['Functions', 'ENABLE_STORE_USER'], false);
 const enableEditUser        = getEnvVar('ENABLE_EDIT_USER', ['Functions', 'ENABLE_EDIT_USER'], false);
 const enableDeleteUser      = getEnvVar('ENABLE_DELETE_USER', ['Functions', 'ENABLE_DELETE_USER'], false);
+const enableReactivateUser  = getEnvVar('ENABLE_REACTIVATE_USER', ['Functions', 'ENABLE_REACTIVATE_USER'], false);
+
+
 
 // Loggen der Server-Konfiguration
 logEvent('system', 'conf', l.prefix_Server_Config, JSON.stringify(envConfig, null, 2), 'info');
-
 logEvent('system', 'conf', l.prefix_Private_API_URL, privateApiUrl, 'info');
 logEvent('system', 'conf', l.prefix_Public_API_URL, apiUrl, 'info');
 logEvent('system', 'conf', l.prefix_Port, Port, 'info');
@@ -323,8 +325,9 @@ const allFunctions = [
   { name: 'Store User',         enabled: enableStoreUser },
   { name: 'Edit User',          enabled: enableEditUser },
   { name: 'Delete User',        enabled: enableDeleteUser },
+  { name: 'Reactivate User',    enabled: enableReactivateUser },
   // { name: 'Open AI compatible API Chat', enabled: enableChat },
-  { name: 'Continue Chat', enabled: enableContinueChat },
+  // { name: 'Continue Chat', enabled: enableContinueChat },
 ];
 
 // Filtern, um nur deaktivierte (false) zu bekommen
@@ -674,7 +677,7 @@ class PrivateGPTServer {
     constructor() {
         this.server = new Server({
             name: 'pgpt-mcp-server',
-            version: '2.2.0',
+            version: '2.8.0',
         }, {
             capabilities: {
                 resources: {},
@@ -2127,7 +2130,7 @@ class PrivateGPTServer {
                             );
 
                             // Loggen der erfolgreichen Benutzerlöschung
-                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_delete_userSuccess, `Benutzer erfolgreich gelöscht: ${JSON.stringify(response.data)}`, 'info');
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_delete_userSuccess, t.deleteUserSuccess.replace('${data}', JSON.stringify(response.data, null, 2)), 'info');
 
                             return {
                                 status: response.data?.status || 'ok',
@@ -2140,6 +2143,60 @@ class PrivateGPTServer {
                             return {
                                 status: error.response?.status || 'E52-R-5201',
                                 message: error.response?.data?.message || 'Fehler beim Löschen des Benutzers.'
+                            };
+                        }
+                    }
+                    /* 5.3 Reactivate User ################################################################################*/
+                    case 'reactivate_user': {
+                        const disabledResponse = checkToolEnabled('reactivate_user');
+                        if (disabledResponse) return disabledResponse;
+
+                        const { token, arguments: args } = request.params;
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
+
+                        // E-Mail ist erforderlich, um einen Benutzer zu reaktivieren
+                        if (!args || !args.email) {
+                            if (!isanonymousModeEnabled) {
+                                logEvent('server', 'swreg', l.prefix_reactivate_userError, t.emailRequiredForReactivate, 'error');
+                            }
+                            return {
+                                status: 'E53-R-5300',
+                                message: t.emailRequiredForReactivate
+                            };
+                        }
+
+                        try {
+                            // POST-Anfrage mit JSON-Body für die Reaktivierung des Benutzers
+                            const response = await this.axiosInstance.post(
+                                '/api/v1/users/reactivate',
+                                { email: args.email },
+                                {
+                                    headers: { 
+                                        Authorization: `Bearer ${token}`,
+                                        Accept: 'application/json'
+                                    }
+                                }
+                            );
+
+                            // Loggen der erfolgreichen Benutzerreaktivierung
+                            if (!isanonymousModeEnabled) {
+                                logEvent('server', 'swreg', l.prefix_reactivate_userSuccess, `Benutzer erfolgreich reaktiviert: ${JSON.stringify(response.data)}`, 'info');
+                            }
+
+                            return {
+                                status: response.data?.status || 'ok',
+                                message: response.data?.message || 'Benutzer erfolgreich reaktiviert.',
+                                data: response.data?.data
+                            };
+                        } catch (error) {
+                            // Loggen des Fehlers bei der Benutzerreaktivierung
+                            if (!isanonymousModeEnabled) {
+                                logEvent('server', 'swreg', l.prefix_reactivate_userError, t.reactivateUserError.replace('${error}', error.response?.data || error.message), 'error');
+                            }
+                            return {
+                                status: error.response?.status || 'E53-R-5301',
+                                message: error.response?.data?.message || 'Fehler bei der Reaktivierung des Benutzers.'
                             };
                         }
                     }
@@ -3316,6 +3373,62 @@ async run() {
 						};
 					}
 				}
+                /* 5.3 Reactivate User ################################################################################*/
+                case 'reactivate_user': {
+                    const disabledResponse = checkToolEnabled('reactivate_user');
+                    if (disabledResponse) return disabledResponse;
+                    const { token, arguments: args } = message;
+
+                    const { email } = args;
+
+                    if (!email) {
+                        if (!isanonymousModeEnabled) {
+                            logEvent('client', 'swmsg', l.prefix_reactivate_user, t.emailRequiredForReactivate, 'error');
+                        }
+                        return { status: 'E53-M-5300', message: t.emailRequiredForReactivate };
+                    }
+
+                    // Loggen des Beginns der Benutzerreaktivierung
+                    if (!isanonymousModeEnabled) {
+                        logEvent('client', 'swmsg', l.prefix_reactivate_user, t.reactivateUserLog.replace('${UserName}', email), 'info');
+                    }
+
+                    try {
+                        const response = await this.axiosInstance.post(
+                            '/api/v1/users/reactivate',
+                            { email },
+                            {
+                                headers: { 
+                                    Authorization: `Bearer ${token}`,
+                                    Accept: 'application/json'
+                                }
+                            }
+                        );
+
+                        // Loggen der erfolgreichen Benutzerreaktivierung
+                        if (!isanonymousModeEnabled) {
+                            logEvent('client', 'swmsg', l.prefix_reactivate_userSuccess, 
+                                     t.reactivateUserSuccess.replace('${data}', JSON.stringify(response.data, null, 2)), 'info');
+                        }
+
+                        return {
+                            content: response.data,
+                        };
+                    } catch (error) {
+                        const reactivateUserError = error.message || JSON.stringify(error.response?.data);
+                        // Loggen des Fehlers bei der Benutzerreaktivierung
+                        if (!isanonymousModeEnabled) {
+                            logEvent('client', 'swmsg', l.prefix_reactivate_userError, 
+                                     t.reactivateUserError.replace('${error}', reactivateUserError), 'error');
+                        }
+                        // Fehlerhafte Antwort
+                        return {
+                            data: {},
+                            message: error.response?.data?.message || 'Reaktivierung des Benutzers fehlgeschlagen. Bitte versuchen Sie es später erneut.',
+                            status: error.response?.status || 'E53-M-5301', // Internal Server Error
+                        };
+                    }
+                }
 				/* 6.0 Open AI compatible API Chat #######################################################################################*/
                 case 'oai_comp_api_chat': {
                     const disabledResponse = checkToolEnabled('oai_comp_api');

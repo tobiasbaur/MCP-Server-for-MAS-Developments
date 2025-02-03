@@ -21,11 +21,15 @@ export const prefixMessages = {
         prefix_delete_all_chatsSuccess:     'DelAllChats: Success',
         prefix_delete_all_chatsError:       'DelAllChats: ApiError',
         prefix_delete_all_chatsWarning:     'DelAllChats: Warning',
-        prefix_delete_chat: 'DeleteChat',
-        prefix_delete_chatRequest: 'DeleteChat: Request',
-        prefix_delete_chatSuccess: 'DeleteChat: Success',
-        prefix_delete_chatError: 'DeleteChat: ApiError',
-        prefix_delete_chatWarning: 'DeleteChat: Warning',
+        prefix_delete_chat:                 'DeleteChat',
+        prefix_delete_chatRequest:          'DeleteChat: Request',
+        prefix_delete_chatSuccess:          'DeleteChat: Success',
+        prefix_delete_chatError:            'DeleteChat: ApiError',
+        prefix_delete_chatWarning:          'DeleteChat: Warning',
+        prefix_reactivate_user:             'ReactivateUser',
+        prefix_reactivate_userSuccess:      'ReactivateUser: Success',
+        prefix_reactivate_userError:        'ReactivateUser: Error',
+        
 		//##############
 		prefix_All_Funcs: 					'All Funcs',
 		prefix_Allow_Keygen: 				'Allow Keygen',
@@ -1055,6 +1059,10 @@ export const messages = {
         deleteChatNotAllowed: "Deleting this chat is not allowed.",
 		toolDisabledLog: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${toolName}' }),
 		toolDisabledError: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${toolName}' }),
+        emailRequiredForReactivate: "An email address is required to reactivate a user.",
+        reactivateUserLog: "Starting reactivation process for user: ${UserName}.",
+        reactivateUserSuccess: "User reactivated successfully: ${data}.",
+        reactivateUserError: "Error reactivating user: ${error}. Please try again later.",
         
         // NEW ***************************************************
         openaicompAPI: 'ENABLE_OPEN_AI_COMP_API value: ${val}',
