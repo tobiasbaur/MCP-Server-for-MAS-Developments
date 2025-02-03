@@ -8,9 +8,10 @@ import tiktoken
 from pydantic import BaseModel
 from starlette.responses import StreamingResponse
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from threading import local
 
+from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import get_models, ModelRequest, models
 from ...AgentInterface.Python.agent import PrivateGPTAgent
 from ...AgentInterface.Python.config import Config, ConfigError
 
@@ -108,6 +109,48 @@ async def chat_completions(request: ChatCompletionRequest):
     else:
         return _resp_sync(response, request)
 
+@app.post("/completions")
+async def completions(request: ChatCompletionRequest):
+    headers = getattr(request_context, "headers", {})
+    #print(headers)
+
+    client_api_key = str(headers['authorization']).split(" ")[1]
+    #print("API KEY: " + client_api_key)
+
+    if request.messages:
+        whitelist_keys = config.get("whitelist_keys", [])
+        if len(whitelist_keys) > 0 and client_api_key not in whitelist_keys:
+            response = {
+                "chatId": "0",
+                "answer": "API Key not valid",
+            }
+            print(f"💡 Response: {response["answer"]}")
+            if request.stream:
+                return StreamingResponse(
+                    _resp_async_generator(response, request), media_type="application/x-ndjson"
+                )
+            else:
+                return _resp_sync(response, request)
+
+        pgpt = PrivateGPTAgent(config)
+        response = pgpt.respond_with_context(request.messages)
+        if "answer" not in response:
+            response["answer"] = "No Response received"
+
+    else:
+        response = {
+            "chatId": "0",
+            "answer": "No Input given",
+        }
+    print(f"💡 Response: {response["answer"]}")
+    if request.stream:
+        return StreamingResponse(
+            _resp_async_generator(response, request), media_type="application/x-ndjson"
+        )
+    else:
+        return _resp_sync(response, request)
+
+
 
 def _resp_sync(response: json, request):
     user_input = ""
@@ -176,20 +219,21 @@ def num_tokens_from_string(string: str, encoding_name: str) -> int:
 
 
 @app.get("/models")
-def get_models():
+def return_models():
     return {
         "object": "list",
-        "data": [
-            {
-                "id": "pgpt-mistral-nemo-12b",
-                "object": "model",
-                "created": 1686935002,
-                "owned_by": "Fujitsu"
-            }
-        ]
+        "data": models
     }
 
 
+@app.get('/models/{model_id}')
+async def get_model(model_id: str):
+    filtered_entries = list(filter(lambda item: item["id"] == model_id, models))
+    entry = filtered_entries[0] if filtered_entries else None
+    print(entry)
+    if entry is None:
+            raise HTTPException(status_code=404, detail="Model not found")
+    return entry
 
 
 if __name__ == "__main__":
