@@ -1,12 +1,13 @@
 from pathlib import Path
 
+
 from starlette.responses import StreamingResponse
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from threading import local
 
 from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import ChatInstance, \
-    ChatCompletionRequest, _resp_sync, _resp_async_generator, get_models
+    ChatCompletionRequest, _resp_sync, _resp_async_generator, models
 from .pgpt_api import PrivateGPTAPI
 
 from ...AgentInterface.Python.config import Config, ConfigError
@@ -91,12 +92,65 @@ async def chat_completions(request: ChatCompletionRequest):
     else:
         return _resp_sync(response, request)
 
+@app.post("/completions")
+async def completions(request: ChatCompletionRequest):
+    headers = getattr(request_context, "headers", {})
+    client_api_key = str(headers['authorization']).split(" ")[1]
+    groups = default_groups
+    if request.groups:
+        groups = request.groups
+    print("Groups: " + str(groups))
+
+    if request.messages:
+
+        #otherwise connect via api-key
+        config.set_value("groups", groups)
+        pgpt = PrivateGPTAPI(config, client_api_key=client_api_key)
+        # remember that we already have an instance for the api key
+
+        if pgpt.logged_in:
+            response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
+            if "answer" not in response:
+                response["answer"] = "No Response received"
+            if "answer" in response and response["answer"] == "error":
+                if pgpt.login():
+                    pgpt.create_chat()
+        else:
+            response = {
+                "chatId": "0",
+                "answer": "API Key not valid",
+            }
+    else:
+        response = {
+            "chatId": "0",
+            "answer": "No Input given",
+        }
+
+    if request.stream:
+        return StreamingResponse(
+            _resp_async_generator(response, request), media_type="application/x-ndjson"
+        )
+    else:
+        return _resp_sync(response, request)
+
 
 
 @app.get("/models")
 def return_models():
-    return get_models()
+    return {
+        "object": "list",
+        "data": models
+    }
 
+
+@app.get('/models/{model_id}')
+async def get_model(model_id: str):
+    filtered_entries = list(filter(lambda item: item["id"] == model_id, models))
+    entry = filtered_entries[0] if filtered_entries else None
+    print(entry)
+    if entry is None:
+            raise HTTPException(status_code=404, detail="Model not found")
+    return entry
 
 
 if __name__ == "__main__":
