@@ -16,6 +16,16 @@ function formatMessage(template, variables) {
 export const prefixMessages = {
 	en: {
 		prefix_openaicompAPI:				'Open AI cmp. API',
+        prefix_delete_all_chats:            'DelAllChats',
+        prefix_delete_all_chatsRequest:     'DelAllChats: Request',
+        prefix_delete_all_chatsSuccess:     'DelAllChats: Success',
+        prefix_delete_all_chatsError:       'DelAllChats: ApiError',
+        prefix_delete_all_chatsWarning:     'DelAllChats: Warning',
+        prefix_delete_chat: 'DeleteChat',
+        prefix_delete_chatRequest: 'DeleteChat: Request',
+        prefix_delete_chatSuccess: 'DeleteChat: Success',
+        prefix_delete_chatError: 'DeleteChat: ApiError',
+        prefix_delete_chatWarning: 'DeleteChat: Warning',
 		//##############
 		prefix_All_Funcs: 					'All Funcs',
 		prefix_Allow_Keygen: 				'Allow Keygen',
@@ -1030,7 +1040,24 @@ export const messages = {
 		tokenMissing: 'Token fehlt.'
 	},
     en: {
-		openaicompAPI: 'ENABLE_OPEN_AI_COMP_API value: ${val}',
+        deleteChatsSuccess: "All chat history has been successfully deleted.",
+        deleteChatsError: "An error occurred while deleting chat history: ${error}.",
+        missingAuthToken: "Authorization token is missing or invalid.",
+        deleteChatsUnauthorized: "You are not authorized to delete chat history.",
+        deleteChatsServerIssue: "A server error occurred while processing the request.",
+        deleteChatsNotAllowed: "Deleting chat history is not allowed for this user.",
+        missingChatId: "Chat ID is missing. Please provide a valid chat ID.",
+        chatDeleted: "Chat with ID ${chatId} has been successfully deleted.",
+        deleteChatError: "An error occurred while deleting chat with ID ${chatId}: ${error}.",
+        missingAuthToken: "Authorization token is missing or invalid.",
+        deleteChatUnauthorized: "You are not authorized to delete this chat.",
+        deleteChatServerIssue: "A server error occurred while processing the request.",
+        deleteChatNotAllowed: "Deleting this chat is not allowed.",
+		toolDisabledLog: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${toolName}' }),
+		toolDisabledError: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${toolName}' }),
+        
+        // NEW ***************************************************
+        openaicompAPI: 'ENABLE_OPEN_AI_COMP_API value: ${val}',
 		createSourceError: 'Error creating source: ${error}',
 		create_sourceUnknownError: 'Unknown error creating source: ${error}',
 		returnStatus: 'Status: ${Status}',
@@ -1058,8 +1085,6 @@ export const messages = {
 		listGroupsSuccess: 'Groups list retrieved: ${GROUPS}',
 		//Existing ones
 		toolNotDefinedInConfig: formatMessage(templates.error, { action: 'Invalid function call', details: '${warn}' }),
-		toolDisabledLog: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${warn}' }),
-		toolDisabledError: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${warn}' }),
 		accessRestrictedGroups: formatMessage(templates.info, { action: 'RESTRICTED_GROUPS Value', details: '${val}' }),
         allFunctionsEnabled: formatMessage(templates.success, { action: 'All functions are enabled', details: '' }),
         allGroupsValid: formatMessage(templates.success, { action: 'All groups are valid', details: '' }),

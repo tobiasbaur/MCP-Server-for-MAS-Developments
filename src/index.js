@@ -266,22 +266,24 @@ function getEncryptedKey(password) {
     }
 }
 
-const enableLogin = getEnvVar('ENABLE_LOGIN', ['Functions', 'ENABLE_LOGIN'], false);
-const enableLogout = getEnvVar('ENABLE_LOGOUT', ['Functions', 'ENABLE_LOGOUT'], false);
-const enableChat = getEnvVar('ENABLE_CHAT', ['Functions', 'ENABLE_CHAT'], false);
-const enableContinueChat = getEnvVar('ENABLE_CONTINUE_CHAT', ['Functions', 'ENABLE_CONTINUE_CHAT'], false);
-const enableGetChatInfo = getEnvVar('ENABLE_GET_CHAT_INFO', ['Functions', 'ENABLE_GET_CHAT_INFO'], false);
-const enableListGroups = getEnvVar('ENABLE_LIST_GROUPS', ['Functions', 'ENABLE_LIST_GROUPS'], false);
-const enableStoreGroup = getEnvVar('ENABLE_STORE_GROUP', ['Functions', 'ENABLE_STORE_GROUP'], false);
-const enableDeleteGroup = getEnvVar('ENABLE_DELETE_GROUP', ['Functions', 'ENABLE_DELETE_GROUP'], false);
-const enableCreateSource = getEnvVar('ENABLE_CREATE_SOURCE', ['Functions', 'ENABLE_CREATE_SOURCE'], false);
-const enableEditSource = getEnvVar('ENABLE_EDIT_SOURCE', ['Functions', 'ENABLE_EDIT_SOURCE'], false);
-const enableDeleteSource = getEnvVar('ENABLE_DELETE_SOURCE', ['Functions', 'ENABLE_DELETE_SOURCE'], false);
-const enableGetSource = getEnvVar('ENABLE_GET_SOURCE', ['Functions', 'ENABLE_GET_SOURCE'], false);
-const enableListSources = getEnvVar('ENABLE_LIST_SOURCES', ['Functions', 'ENABLE_LIST_SOURCES'], false);
-const enableStoreUser = getEnvVar('ENABLE_STORE_USER', ['Functions', 'ENABLE_STORE_USER'], false);
-const enableEditUser = getEnvVar('ENABLE_EDIT_USER', ['Functions', 'ENABLE_EDIT_USER'], false);
-const enableDeleteUser = getEnvVar('ENABLE_DELETE_USER', ['Functions', 'ENABLE_DELETE_USER'], false);
+const enableLogin           = getEnvVar('ENABLE_LOGIN', ['Functions', 'ENABLE_LOGIN'], false);
+const enableLogout          = getEnvVar('ENABLE_LOGOUT', ['Functions', 'ENABLE_LOGOUT'], false);
+const enableChat            = getEnvVar('ENABLE_CHAT', ['Functions', 'ENABLE_CHAT'], false);
+const enableContinueChat    = getEnvVar('ENABLE_CONTINUE_CHAT', ['Functions', 'ENABLE_CONTINUE_CHAT'], false);
+const enableGetChatInfo     = getEnvVar('ENABLE_GET_CHAT_INFO', ['Functions', 'ENABLE_GET_CHAT_INFO'], false);
+const enableDeleteAllChats  = getEnvVar('ENABLE_DELETE_ALL_CHATS', ['Functions', 'ENABLE_DELETE_ALL_CHATS'], false);
+const enableDeleteChat      = getEnvVar('ENABLE_DELETE_CHAT', ['Functions', 'ENABLE_DELETE_CHAT'], false);
+const enableListGroups      = getEnvVar('ENABLE_LIST_GROUPS', ['Functions', 'ENABLE_LIST_GROUPS'], false);
+const enableStoreGroup      = getEnvVar('ENABLE_STORE_GROUP', ['Functions', 'ENABLE_STORE_GROUP'], false);
+const enableDeleteGroup     = getEnvVar('ENABLE_DELETE_GROUP', ['Functions', 'ENABLE_DELETE_GROUP'], false);
+const enableCreateSource    = getEnvVar('ENABLE_CREATE_SOURCE', ['Functions', 'ENABLE_CREATE_SOURCE'], false);
+const enableEditSource      = getEnvVar('ENABLE_EDIT_SOURCE', ['Functions', 'ENABLE_EDIT_SOURCE'], false);
+const enableDeleteSource    = getEnvVar('ENABLE_DELETE_SOURCE', ['Functions', 'ENABLE_DELETE_SOURCE'], false);
+const enableGetSource       = getEnvVar('ENABLE_GET_SOURCE', ['Functions', 'ENABLE_GET_SOURCE'], false);
+const enableListSources     = getEnvVar('ENABLE_LIST_SOURCES', ['Functions', 'ENABLE_LIST_SOURCES'], false);
+const enableStoreUser       = getEnvVar('ENABLE_STORE_USER', ['Functions', 'ENABLE_STORE_USER'], false);
+const enableEditUser        = getEnvVar('ENABLE_EDIT_USER', ['Functions', 'ENABLE_EDIT_USER'], false);
+const enableDeleteUser      = getEnvVar('ENABLE_DELETE_USER', ['Functions', 'ENABLE_DELETE_USER'], false);
 
 // Loggen der Server-Konfiguration
 logEvent('system', 'conf', l.prefix_Server_Config, JSON.stringify(envConfig, null, 2), 'info');
@@ -303,22 +305,24 @@ logEvent('system', 'conf', l.prefix_ANONYMOUS_MODE, anonymousMode, 'info');
 
 // Loggen der deaktivierten Funktionen
 const allFunctions = [
-  { name: 'Login', enabled: enableLogin },
-  { name: 'Logout', enabled: enableLogout },
-  { name: 'Chat', enabled: enableChat },
-  { name: 'Continue Chat', enabled: enableContinueChat },
-  { name: 'Get Chat Info', enabled: enableGetChatInfo },
-  { name: 'List Groups', enabled: enableListGroups },
-  { name: 'Store Group', enabled: enableStoreGroup },
-  { name: 'Delete Group', enabled: enableDeleteGroup },
-  { name: 'Create Source', enabled: enableCreateSource },
-  { name: 'Edit Source', enabled: enableEditSource },
-  { name: 'Delete Source', enabled: enableDeleteSource },
-  { name: 'Get Source', enabled: enableGetSource },
-  { name: 'List Sources', enabled: enableListSources },
-  { name: 'Store User', enabled: enableStoreUser },
-  { name: 'Edit User', enabled: enableEditUser },
-  { name: 'Delete User', enabled: enableDeleteUser },
+  { name: 'Login',              enabled: enableLogin },
+  { name: 'Logout',             enabled: enableLogout },
+  { name: 'Chat',               enabled: enableChat },
+  { name: 'Continue Chat',      enabled: enableContinueChat },
+  { name: 'Get Chat Info',      enabled: enableGetChatInfo },
+  { name: 'Delete All Chats',   enabled: enableDeleteAllChats },
+  { name: 'Delete Chat',        enabled: enableDeleteChat },
+  { name: 'List Groups',        enabled: enableListGroups },
+  { name: 'Store Group',        enabled: enableStoreGroup },
+  { name: 'Delete Group',       enabled: enableDeleteGroup },
+  { name: 'Create Source',      enabled: enableCreateSource },
+  { name: 'Edit Source',        enabled: enableEditSource },
+  { name: 'Delete Source',      enabled: enableDeleteSource },
+  { name: 'Get Source',         enabled: enableGetSource },
+  { name: 'List Sources',       enabled: enableListSources },
+  { name: 'Store User',         enabled: enableStoreUser },
+  { name: 'Edit User',          enabled: enableEditUser },
+  { name: 'Delete User',        enabled: enableDeleteUser },
   // { name: 'Open AI compatible API Chat', enabled: enableChat },
   { name: 'Continue Chat', enabled: enableContinueChat },
 ];
@@ -1292,7 +1296,10 @@ class PrivateGPTServer {
                             if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
                             return { status: 'E20-R-2000', message: t.missingTokenError };
                         }
-
+                        
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
+                        
                         // Argument-Validierung
                         if (!args || !args.question) {
                             if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.missingArgumentsError.replace('${args}', JSON.stringify(args)), 'error');
@@ -1450,6 +1457,93 @@ class PrivateGPTServer {
                                 message: error.response?.data?.message || 'Fehler beim Abrufen der Chat-Informationen.'
                             };
                         }
+                    }                  
+                    /* 2.3 Delete All Chats ##############################################################################*/
+                    case 'delete_all_chats': {
+                        const disabledResponse = checkToolEnabled('delete_all_chats');
+                        if (disabledResponse) return disabledResponse;
+
+                        const { token } = request.params;
+
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
+
+                        try {
+                            const response = await this.axiosInstance.delete('/chats/flush', {
+                                headers: { 
+                                    Authorization: `Bearer ${token}`,
+                                    Accept: 'application/json'
+                                }
+                            });
+
+                            // Erfolg loggen
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_delete_all_chatsSuccess, t.chatsDeleted, 'info');
+
+                            return {
+                                data: {},
+                                message: response.data?.message || 'success',
+                                status: response.status || 200
+                            };
+                        } catch (error) {
+                            const deleteChatsErrorMessage = error.message || error.response?.data;
+                            
+                            // Fehler loggen
+                            if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_delete_all_chatsError, t.deleteChatsError.replace('${error}', deleteChatsErrorMessage), 'error');
+
+                            return {
+                                status: error.response?.status || 'E23-R-2300',
+                                message: error.response?.data?.message || 'Error deleting all chat history.'
+                            };
+                        }
+                    }
+                    /* 2.4 Delete Specific Chat ##############################################################################*/
+                    case 'delete_chat': {
+                        const disabledResponse = checkToolEnabled('delete_chat');
+                        if (disabledResponse) return disabledResponse;
+
+                        const { token, arguments: args } = request.params;
+
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
+
+                        const { chatId } = args;
+
+                        if (!chatId) {
+                            return { status: 'E24-R-2400', message: t.missingChatId };
+                        }
+
+                        try {
+                            const response = await this.axiosInstance.delete(`/chats/${chatId}`, {
+                                headers: { 
+                                    Authorization: `Bearer ${token}`,
+                                    Accept: 'application/json'
+                                }
+                            });
+
+                            // Erfolg loggen
+                            if (!isanonymousModeEnabled) {
+                                logEvent('server', 'swreg', l.prefix_delete_chatSuccess, t.chatDeleted.replace('${chatId}', chatId), 'info');
+                            }
+
+                            return {
+                                data: {},
+                                message: response.data?.message || 'success',
+                                status: response.status || 200
+                            };
+                        } catch (error) {
+                            const deleteChatErrorMessage = error.message || error.response?.data;
+                            
+                            // Fehler loggen
+                            if (!isanonymousModeEnabled) {
+                                logEvent('server', 'swreg', l.prefix_delete_chatError, 
+                                         t.deleteChatError.replace('${chatId}', chatId).replace('${error}', deleteChatErrorMessage), 'error');
+                            }
+
+                            return {
+                                status: error.response?.status || 'E24-R-2401',
+                                message: error.response?.data?.message || `Error deleting chat with ID ${chatId}.`
+                            };
+                        }
                     }
                     /* 3.0 Create Source ##############################################################################*/
                     case 'create_source': {
@@ -1464,6 +1558,10 @@ class PrivateGPTServer {
                             if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_create_sourceError, t.tokenMissing, 'error');
                             return { status: 'E30-R-3000', message: t.missingTokenError };
                         }
+
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
+                        
                         if (!args || !args.name || !args.content) {
                             if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_create_sourceError, t.missingNameAndContent, 'error');
                             return {
@@ -1628,6 +1726,9 @@ class PrivateGPTServer {
 
                         const { token, arguments: args } = request.params;
                         const { sourceId, title, content, groups } = args;
+
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
 
                         // Validierung: Erforderliche Parameter
                         if (!sourceId) {
@@ -2055,6 +2156,9 @@ class PrivateGPTServer {
                             if (!isanonymousModeEnabled) logEvent('server', 'swreg', l.prefix_chatError, t.noTokenError, 'error');
                             return { status: 'E60-R-6000', message: t.missingTokenError };
                         }
+                        const tokenValidation = validateToken(token);
+                        if (tokenValidation) return tokenValidation;
+
 
                         // Argument-Validierung
                         if (!args || !args.question) {
@@ -2301,7 +2405,7 @@ async run() {
                     if (disabledResponse) return disabledResponse;
 
                     const { token } = message;
-
+                    
                     try {
                         const logoutResponse = await this.axiosInstance.delete('/logout', {
                             headers: {
@@ -2500,6 +2604,103 @@ async run() {
 						};
 					}
 				}
+                /* 2.3 Delete All Chats ##############################################################################*/
+                case 'delete_all_chats': {
+                    const disabledResponse = checkToolEnabled('delete_all_chats');
+                    if (disabledResponse) return disabledResponse;
+
+                    const token = message?.token;
+
+                    if (!token) {
+                        return { status: 'E23-M-2301', message: t.missingAuthToken };
+                    }
+
+                    const tokenValidation = validateToken(token);
+                    if (tokenValidation) return tokenValidation;
+
+                    try {
+                        const response = await this.axiosInstance.delete('/chats/flush', {
+                            headers: { 
+                                Authorization: `Bearer ${token}`,
+                                Accept: 'application/json'
+                            }
+                        });
+
+                        // Erfolg loggen
+                        if (!isanonymousModeEnabled) {
+                            logEvent('server', 'swmsg', l.prefix_delete_all_chatsSuccess, t.deleteChatsSuccess, 'info');
+                        }
+
+                        return {
+                            data: {},
+                            message: response.data?.message || 'success',
+                            status: response.status || 200
+                        };
+                    } catch (error) {
+                        const deleteChatsErrorMessage = error.message || error.response?.data;
+                        
+                        // Fehler loggen
+                        if (!isanonymousModeEnabled) {
+                            logEvent('server', 'swmsg', l.prefix_delete_all_chatsError, 
+                                     t.deleteChatsError.replace('${error}', deleteChatsErrorMessage), 'error');
+                        }
+
+                        return {
+                            status: error.response?.status || 'E23-M-2300',
+                            message: error.response?.data?.message || 'Error deleting all chat history.'
+                        };
+                    }
+                }
+                /* 2.4 Delete Specific Chat ##############################################################################*/
+                case 'delete_chat': {
+                    const disabledResponse = checkToolEnabled('delete_chat');
+                    if (disabledResponse) return disabledResponse;
+                    
+                    const { token } = message; // Token direkt aus `message` extrahieren
+                    const tokenValidation = validateToken(token);
+                    if (tokenValidation) return tokenValidation;
+                    
+					const args = message.arguments || {}; // Argumente aus `message` extrahieren
+					const { chatId } = args; // chatId aus den Argumenten extrahieren
+
+                    if (!chatId) {
+                        return { status: 'E24-M-2400', message: t.missingChatId };
+                    }
+
+                    try {
+                        const response = await this.axiosInstance.delete(`/chats/${chatId}`, {
+                            headers: { 
+                                Authorization: `Bearer ${token}`,
+                                Accept: 'application/json'
+                            }
+                        });
+
+                        // Erfolg loggen
+                        if (!isanonymousModeEnabled) {
+                            logEvent('server', 'swmsg', l.prefix_delete_chatSuccess, t.chatDeleted.replace('${chatId}', chatId), 'info');
+                        }
+
+                        return {
+                            data: {},
+                            message: response.data?.message || 'success',
+                            status: response.status || 200
+                        };
+                    } catch (error) {
+                        const deleteChatErrorMessage = error.message || error.response?.data;
+                        
+                        // Fehler loggen
+                        if (!isanonymousModeEnabled) {
+                            logEvent('server', 'swmsg', l.prefix_delete_chatError, 
+                                     t.deleteChatError.replace('${chatId}', chatId).replace('${error}', deleteChatErrorMessage), 'error');
+                        }
+
+                        return {
+                            status: error.response?.status || 'E24-M-2401',
+                            message: error.response?.data?.message || `Error deleting chat with ID ${chatId}.`
+                        };
+                    }
+                }
+
 				/* 3.0 Create Source ##############################################################################*/
 				case 'create_source': {
 					const disabledResponse = checkToolEnabled('create_source');
