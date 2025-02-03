@@ -11,7 +11,7 @@ from starlette.responses import StreamingResponse
 from fastapi import FastAPI, Request, HTTPException
 from threading import local
 
-from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import get_models, ModelRequest, models
+from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import models
 from ...AgentInterface.Python.agent import PrivateGPTAgent
 from ...AgentInterface.Python.config import Config, ConfigError
 
