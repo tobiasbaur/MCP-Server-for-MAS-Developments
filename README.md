@@ -278,6 +278,8 @@ The PGPT Server offers a robust set of features designed to provide efficient, f
 - **Start a Chat**: Initiate a conversation with the server, optionally using public knowledge bases or specific group contexts.
 - **Continue a Chat**: Resume an ongoing conversation by providing the chat ID and a follow-up message.
 - **Retrieve Chat Information**: Fetch metadata and messages for a specific chat by its ID.
+- **Delete all Chats**: Deletes the previous chat histories of the executing user (chat history).
+- **Delete Chat**: Deletes the current chat of the executing user.
 
 ---
 
@@ -301,6 +303,7 @@ The PGPT Server offers a robust set of features designed to provide efficient, f
 - **Create Users**: Register new users with customizable roles, groups, and settings.
 - **Edit Users**: Update user information, including name, email, password, and roles.
 - **Delete Users**: Remove users from the system (if enabled in configuration).
+- **Reactivate User**: Reactivate a user who was previously deactivated.
 
 ---
 
@@ -511,24 +514,27 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 ## `Feature Activation/Deactivation`
 Control the availability of individual server functions. Set the corresponding value to `true` to enable the function, or `false` to disable it. Disabled functions will return a message indicating they are not available.
 
-| Key                       | Description                                        | Example Value |
-|---------------------------|----------------------------------------------------|---------------|
-| **ENABLE_LOGIN**          | Enables or disables the login function.            | `true`        |
-| **ENABLE_LOGOUT**         | Enables or disables the logout function.           | `true`        |
-| **ENABLE_CHAT**           | Enables or disables the chat functionality.        | `true`        |
-| **ENABLE_CONTINUE_CHAT**  | Enables or disables continuing a chat.             | `true`        |
-| **ENABLE_GET_CHAT_INFO**  | Enables or disables retrieving chat information.   | `true`        |
-| **ENABLE_LIST_GROUPS**    | Enables or disables listing groups.                | `true`        |
-| **ENABLE_STORE_GROUP**    | Enables or disables creating a group.              | `true`        |
-| **ENABLE_DELETE_GROUP**   | Enables or disables deleting a group.              | `false`       |
-| **ENABLE_CREATE_SOURCE**  | Enables or disables creating a source.             | `true`        |
-| **ENABLE_EDIT_SOURCE**    | Enables or disables editing a source.              | `true`        |
-| **ENABLE_DELETE_SOURCE**  | Enables or disables deleting a source.             | `true`        |
-| **ENABLE_GET_SOURCE**     | Enables or disables retrieving a source.           | `true`        |
-| **ENABLE_LIST_SOURCES**   | Enables or disables listing sources.               | `true`        |
-| **ENABLE_STORE_USER**     | Enables or disables creating a user.               | `true`        |
-| **ENABLE_EDIT_USER**      | Enables or disables editing a user.                | `false`       |
-| **ENABLE_DELETE_USER**    | Enables or disables deleting a user.               | `false`       |
+| Key                          | Description                                        | Example Value |
+|------------------------------|----------------------------------------------------|---------------|
+| **ENABLE_LOGIN**             | Enables or disables the login function.            | `true`        |
+| **ENABLE_LOGOUT**            | Enables or disables the logout function.           | `true`        |
+| **ENABLE_CHAT**              | Enables or disables the chat functionality.        | `true`        |
+| **ENABLE_CONTINUE_CHAT**     | Enables or disables continuing a chat.             | `true`        |
+| **ENABLE_GET_CHAT_INFO**     | Enables or disables retrieving chat information.   | `true`        |
+| **ENABLE_DELETE_ALL_CHATS**  | Enables or disables retrieving chat information.   | `true`        |
+| **ENABLE_DELETE_CHAT**       | Enables or disables retrieving chat information.   | `true`        |
+| **ENABLE_LIST_GROUPS**       | Enables or disables listing groups.                | `true`        |
+| **ENABLE_STORE_GROUP**       | Enables or disables creating a group.              | `true`        |
+| **ENABLE_DELETE_GROUP**      | Enables or disables deleting a group.              | `false`       |
+| **ENABLE_CREATE_SOURCE**     | Enables or disables creating a source.             | `true`        |
+| **ENABLE_EDIT_SOURCE**       | Enables or disables editing a source.              | `true`        |
+| **ENABLE_DELETE_SOURCE**     | Enables or disables deleting a source.             | `true`        |
+| **ENABLE_GET_SOURCE**        | Enables or disables retrieving a source.           | `true`        |
+| **ENABLE_LIST_SOURCES**      | Enables or disables listing sources.               | `true`        |
+| **ENABLE_STORE_USER**        | Enables or disables creating a user.               | `true`        |
+| **ENABLE_EDIT_USER**         | Enables or disables editing a user.                | `false`       |
+| **ENABLE_DELETE_USER**       | Enables or disables deleting a user.               | `false`       |
+| **ENABLE_REACTIVATE_USER**   | Enables or disables reactivating a user.           | `false`       |
 
 ---
 
@@ -964,3 +970,5 @@ MCP-Server-for-MAS-Developments/
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+
