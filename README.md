@@ -175,8 +175,8 @@ Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryp
 
 ### Process
 1. The server administrator encrypts the client's password using the server's public key (`id_rsa_public.pem`) by executing `node security/generate_encrypted_password.js ~/.ssh/id_rsa_public.pem` and hand out the encrpyted password to the client.
-2. Alternatively: The client encrypts the password using the server's public key (`id_rsa_public.pem`) by using the `keygen` - Function. Therefore the function has to be enabled in the server's config (`pgpt.env.json`).
-3. The encrypted password is sent to the server, where it is decrypted using the server's private key.
+2. Alternatively: The client encrypts the password using the server's public key (`id_rsa_public.pem`) by using the `keygen` - Function. Therefore the function has to be enabled in the server's config (`pgpt.env.json`). Important: Using this function also means transmitting data via the network. Therefore, make sure that the data traffic is secure and cannot be intercepted.
+3. Finally, the encrypted password is sent to the server, where it is decrypted using the server's private key.
 
 ### Advantages
 - **Asymmetric encryption** ensures that only the server can decrypt the password.
@@ -186,8 +186,12 @@ Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryp
 To secure data communication and encryption processes, the following key management principles are followed:
 
 ### Public Key
-- Stored securely on the server (`id_rsa_public.pem`).
+- Stored securely on the server (`id_rsa.pub`).
 - Used only for encryption and does not pose a security risk if exposed.
+
+### PEM Key
+- Stored securely on the server (`id_rsa_public.pem`).
+- Has to be created by using the public cert (see: [Server Configuration](#server-configuration))
 
 ### Private Key
 - Stored securely on the server (`id_rsa`).
