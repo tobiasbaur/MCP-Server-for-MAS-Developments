@@ -58,14 +58,18 @@
       - [Example Configuration](#example-configuration)
       - [Notes](#notes)
   - [Server Configuration](#server-configuration)
-    - [PGPT URL](#pgpt-url)
     - [Server Port](#server-port)
     - [Language](#language)
     - [SSL Validation](#ssl-validation)
     - [Encryption](#encryption)
-    - [Group Restrictions](#group-restrictions)
-	- [Enable OpenAI compatible API](#enable-openai-compatible-api)
+  - [Restrictions](#restrictions)
+    - [Group Restrictions](#restrictions)
+	- [Enable OpenAI compatible API](#restrictions)
     - [Feature Activation/Deactivation](#feature-activationdeactivation)
+  - [Logging](#logging)
+    - [Written Logfile](#logging)
+    - [Log IPs](#logging)
+    - [Anonymous Mode](#logging)
   - [Usage](#usage)
     - [Available Tools](#available-tools)
 - [**Project Structure**](#project-structure)
@@ -455,15 +459,6 @@ Customize these values to fit your environment and requirements.
 
 ---
 
-## `PGPT URL`
-
-| Key                       | Description                                              | Example Value                                |
-|---------------------------|----------------------------------------------------------|----------------------------------------------|
-| **PRIVATE_GPT_API_URL**   | The base URL of the Private GPT API.                     | `https://<YOUR DOMAIN OR IP>/api/v1`         |
-| **API_URL**               | Alias for the base API URL.                              | `https://*<YOUR DOMAIN OR IP>*/api/v1`       |
-
----
-
 ## `Server Port`
 | Key      | Description                                    | Example Value |
 |----------|------------------------------------------------|---------------|
@@ -495,21 +490,24 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 | **PUBLIC_KEY**    | Specifies the file system path to the server's public PEM file used for SSL/TLS.     | `"~/.ssh/id_rsa_public.pem"`     |
 | **PRIVATE_KEY**   | Specifies the file system path to the server's private key file used for decryption. | `"~/.ssh/id_rsa_public.pem"`     |
 
----
-
-## `Group Restrictions`
-| Key                 | Description                                                                                     | Example Value |
-|---------------------|-------------------------------------------------------------------------------------------------|---------------|
-| **RESTRICTED_GROUPS** | Setting `true` prevents client access to `assignableGroups`.                                  | `false`       |
 
 ---
 
-## `Enable OpenAI compatible API`
-| Key                 | Description                                                                                     | Example Value |
-|---------------------|-------------------------------------------------------------------------------------------------|---------------|
-| **ENABLE_OPEN_AI_COMP_API** | Setting `true` allows the compatibility mode for OpenAI API.                            | `false`       |
+## `Restrictions`
+| Key                         | Description                                                                                     | Example Value |
+|-----------------------------|-------------------------------------------------------------------------------------------------|---------------|
+| **RESTRICTED_GROUPS**       | Setting `true` prevents client access to `assignableGroups`.                                    | `true`        |
+| **ENABLE_OPEN_AI_COMP_API** | Setting `true` allows the compatibility mode for OpenAI API.                                    | `false`       |
 
 ---
+    
+## `Logging`
+| Key                 | Description                                                                                                                                                             | Example Value |
+|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| **WRITTEN_LOGFILE** | Enable logfile. If set to `false`, no logfile `logs/server.log` will be written. If this option is set to ‘true’, the log can be retrieved via <ip>:3000 of the server. | `true`        |
+| **LOG_IPs**         | Log IP's of the cleints/agents. If it is set to `false`, this information is replaced by `*****` and cannot be restored.                                                | `false`       |
+| **ANONYMOUS_MODE**  | Deactivate everything that has to do with logging. No communication, errors or similar are written/saved or displayed.                                                  | `false`       |
+
 
 ## `Feature Activation/Deactivation`
 Control the availability of individual server functions. Set the corresponding value to `true` to enable the function, or `false` to disable it. Disabled functions will return a message indicating they are not available.
@@ -565,7 +563,13 @@ Example `.env` entry:
         "PRIVATE_KEY": "~/.ssh/id_rsa"
     },
     "Restrictions": {
-        "RESTRICTED_GROUPS": false
+        "RESTRICTED_GROUPS": false,
+        "ENABLE_OPEN_AI_COMP_API": true
+    },
+    "Logging": {
+        "WRITTEN_LOGFILE": true,
+        "LOG_IPs": true,
+        "ANONYMOUS_MODE": false
     },
     "Functions": {
         "ENABLE_LOGIN": true,
@@ -573,17 +577,20 @@ Example `.env` entry:
         "ENABLE_CHAT": true,
         "ENABLE_CONTINUE_CHAT": true,
         "ENABLE_GET_CHAT_INFO": true,
+        "ENABLE_DELETE_ALL_CHATS": true,
+        "ENABLE_DELETE_CHAT": true,
         "ENABLE_LIST_GROUPS": true,
         "ENABLE_STORE_GROUP": true,
-        "ENABLE_DELETE_GROUP": false,
+        "ENABLE_DELETE_GROUP": true,
         "ENABLE_CREATE_SOURCE": true,
         "ENABLE_EDIT_SOURCE": true,
-        "ENABLE_DELETE_SOURCE": false,
+        "ENABLE_DELETE_SOURCE": true,
         "ENABLE_GET_SOURCE": true,
         "ENABLE_LIST_SOURCES": true,
         "ENABLE_STORE_USER": true,
         "ENABLE_EDIT_USER": false,
-        "ENABLE_DELETE_USER": false
+        "ENABLE_DELETE_USER": false,
+        "ENABLE_REACTIVATE_USER": true
     }
 }
 ```
