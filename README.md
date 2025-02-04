@@ -199,7 +199,7 @@ To secure data communication and encryption processes, the following key managem
 - Used exclusively for decryption operations.
 
 ### Key Rotation
-- Keys are rotated periodically or upon detection of a security incident.
+- Keys can be rotated periodically or upon detection of a security incident. Important: if these are reissued, the clients or AI agents immediately lose access to the MCP server and require a new RSA key (encrypted password)!
 - Old keys are securely invalidated.
 
 ## 3. Decryption on the Server
