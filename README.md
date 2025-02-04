@@ -174,8 +174,9 @@ Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryp
 - **Padding**: `RSA_PKCS1_PADDING` to enhance security and prevent known padding attacks.
 
 ### Process
-1. The client encrypts the password using the server's public key (`id_rsa_public.pem`).
-2. The encrypted password is sent to the server, where it is decrypted using the server's private key.
+1. The server administrator encrypts the client's password using the server's public key (`id_rsa_public.pem`) by executing `node security/generate_encrypted_password.js ~/.ssh/id_rsa_public.pem` and hand out the encrpyted password to the client.
+2. Alternatively: The client encrypts the password using the server's public key (`id_rsa_public.pem`) by using the `keygen` - Function. Therefore the function has to be enabled in the server's config (`pgpt.env.json`).
+3. The encrypted password is sent to the server, where it is decrypted using the server's private key.
 
 ### Advantages
 - **Asymmetric encryption** ensures that only the server can decrypt the password.
