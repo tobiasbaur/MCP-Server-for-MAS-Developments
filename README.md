@@ -65,7 +65,7 @@
   - [Restrictions](#restrictions)
     - [Group Restrictions](#restrictions)
 	- [Enable OpenAI compatible API](#restrictions)
- - [Logging](#logging)
+  - [Logging](#logging)
     - [Written Logfile](#logging)
     - [Log IPs](#logging)
     - [Anonymous Mode](#logging)
