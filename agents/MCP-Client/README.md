@@ -40,14 +40,14 @@ The **MCP Client** is an example Client that uses the PGPT OpenAI-Compatible API
 
 3. **Install Dependencies:**
    ```bash
-   pip install -r agents/MCP-CLient/requirements.txt
+   pip install -r agents/MCP-Client/requirements.txt
    ```
 
 4. **Configure the Agent:**
    Copy the example configuration file and adjust it to your environment:
 
    ```bash
-   cp agents/MCP-CLient/.env.example agents/MCP-CLient/.env
+   cp agents/MCP-Client/.env.example agents/MCP-Client/.env
    ```
 
    **Example `config.json`:**
