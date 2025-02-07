@@ -40,8 +40,13 @@ async def chat_completions(request: ChatCompletionRequest):
     headers = getattr(request_context, "headers", {})
     client_api_key = str(headers['authorization']).split(" ")[1]
     groups = default_groups
+    force_new_session = False
+
     if request.groups:
         groups = request.groups
+    if request.newSession:
+        force_new_session = True
+
     print("Groups: " + str(groups))
 
     if request.messages:
@@ -57,6 +62,11 @@ async def chat_completions(request: ChatCompletionRequest):
                 print("⚠️ New Groups requested, switching to new Chat..")
                 config.set_value("groups", groups)
                 instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
+            elif force_new_session:
+                print("⚠️ New Session Requested, switching to new Chat..")
+                config.set_value("groups", groups)
+                instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
+
             pgpt = instances[index].agent
 
         else:

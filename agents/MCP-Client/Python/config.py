@@ -4,7 +4,7 @@ import logging
 
 from mcp.server.sse import SseServerTransport
 
-from mcpcli.transport.stdio.stdio_server_parameters import StdioServerParameters
+from .transport.stdio.stdio_server_parameters import StdioServerParameters
 
 
 async def load_config(config_path: str, server_name: str) -> StdioServerParameters:

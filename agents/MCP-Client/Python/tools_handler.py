@@ -2,8 +2,8 @@ import json
 import logging
 import re
 from typing import Any, Dict, Optional
-from mcpcli.messages.send_call_tool import send_call_tool
-from mcpcli.messages.send_tools_list import send_tools_list
+from .messages.send_call_tool import send_call_tool
+from .messages.send_tools_list import send_tools_list
 
 
 def parse_tool_response(response: str) -> Optional[Dict[str, Any]]:
@@ -79,13 +79,14 @@ async def handle_tool_call(tool_call, conversation_history, server_streams):
             if not tool_response.get("isError"):
                 break
         if tool_response.get("isError"):
-            logging.debug(
+            print(
                 f"Error calling tool '{tool_name}': {tool_response.get('content')}"
             )
 
         # Format the tool response
         formatted_response = format_tool_response(tool_response.get("content", []))
         logging.debug(f"Tool '{tool_name}' Response: {formatted_response}")
+        print(f"Tool '{tool_name}' Response: {formatted_response}")
 
         # Update the conversation history with the tool call
         # Add the tool call itself (for OpenAI tracking)

@@ -7,9 +7,9 @@ from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.prompt import Prompt
 
-from mcpcli.llm_client import LLMClient
-from mcpcli.system_prompt_generator import SystemPromptGenerator
-from mcpcli.tools_handler import convert_to_openai_tools, fetch_tools, handle_tool_call
+from .llm_client import LLMClient
+from .system_prompt_generator import SystemPromptGenerator
+from .tools_handler import convert_to_openai_tools, fetch_tools, handle_tool_call
 
 async def get_input(prompt: str):
     """Get input asynchronously."""

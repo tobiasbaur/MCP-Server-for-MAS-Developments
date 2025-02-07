@@ -6,6 +6,7 @@ from typing import Any, Dict, List
 from dotenv import load_dotenv
 from openai import OpenAI
 
+
 # Load environment variables
 load_dotenv()
 
@@ -37,20 +38,28 @@ class LLMClient:
 
 
     def _pgpt_completion(self, messages: List[Dict], tools: List) -> Dict[str, Any]:
+        newSession = False
+        if len(messages) == 2:  # system prompt and user prompt
+            newSession = True
         try:
             base_url = os.getenv("PGPT_OAI_BASE_URL")
             client = OpenAI(
                 api_key=self.api_key,
                 base_url=base_url  # change the default port if needed
             )
+
+            logging.info(f"Amount of messages: {len(messages)}")
+
             response = client.chat.completions.create(
                 model="pgpt-mistral-nemo-12b",
                 messages=messages,
                 tools=tools or None,
                 extra_body={
-                    "groups": []
+                    "groups": [],
+                    "newSession": newSession
                 },
                 stream = False
+
             )
             #print(response.choices[0].message.content)
             logging.info(f"PGPT raw response: {response}")

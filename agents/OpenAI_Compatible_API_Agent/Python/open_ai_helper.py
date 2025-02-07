@@ -45,6 +45,7 @@ class ChatCompletionRequest(BaseModel):
     response_format: Optional[object] = None
     tools: Optional[object] = None
     groups: Optional[object] = None
+    newSession: Optional[bool] = False
 
 
 
