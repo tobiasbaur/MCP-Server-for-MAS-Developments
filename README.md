@@ -63,7 +63,7 @@
     - [Language](#language)
     - [SSL Validation](#ssl-validation)
     - [Encryption](#encryption)
-    - [SSL/TLS](#ssl-tls)
+    - [SSL/TLS](#ssltls)
   - [Restrictions](#restrictions)
     - [Group Restrictions](#restrictions)
 	- [Enable OpenAI compatible API](#restrictions)
@@ -624,7 +624,10 @@ Example `.env` entry:
         "PW_ENCRYPTION": "true",
         "ALLOW_KEYGEN": "false",
         "PUBLIC_KEY": "~/.ssh/id_rsa_public.pem",
-        "PRIVATE_KEY": "~/.ssh/id_rsa"
+        "PRIVATE_KEY": "~/.ssh/id_rsa",
+        "ENABLE_TLS": "true",
+        "SSL_KEY_PATH": "~/.ssh/certs/server.key",
+        "SSL_CERT_PATH": "~/.ssh/certs/server.crt"
     },
     "Restrictions": {
         "RESTRICTED_GROUPS": false,
