@@ -146,14 +146,14 @@ def on_message(client, userdata, msg):
 
         # Einheitliche Log-Ausgabe für MQTT-Nachrichten
         logging.info(
-            f"{flabel} | {ftopic} | Parameter: {fparam} | Wert: {fvalue}",
+            f"{flabel} | {ftopic} | Parameter: {fparam} | Value: {fvalue}",
             extra={"component": "mqtt", "tag": "message", "message_type": "Incoming"}
         )
         # Speichern der JSON-Daten
         userdata.handlers['json'].append_record(record)
 
         # Ausgabe der JSON-Daten (optional)
-        print(json.dumps(record, indent=4, ensure_ascii=False))
+        # print(json.dumps(record, indent=4, ensure_ascii=False))
 
         # Debugging-Statement
         logging.debug(f"Calling interpret_and_output with record: {record}, handlers: {userdata.handlers}, config: {userdata.config}")

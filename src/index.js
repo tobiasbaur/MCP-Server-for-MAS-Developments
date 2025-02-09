@@ -30,6 +30,8 @@ import { createServer as createHttpServer } from 'http';
 import { Server as SocketIoServer } from 'socket.io';
 import chokidar from 'chokidar';
 import stripAnsi from 'strip-ansi';
+import tls from 'tls';
+
 
 // Promisifizieren von figlet.text für die Verwendung mit async/await
 const figletAsync = promisify(figlet.text);
@@ -123,18 +125,20 @@ function displayStartHeader() {
     });
 }
 
-const privateApiUrl = getEnvVar('PRIVATE_GPT_API_URL', ['PGPT_Url', 'PRIVATE_GPT_API_URL']);
-const requestedLang = getEnvVar('LANGUAGE', ['Server_Config', 'LANGUAGE'], 'en').toLowerCase();
-const apiUrl = getEnvVar('API_URL', ['PGPT_Url', 'API_URL']);
-const Port = getEnvVar('PORT', ['Server_Config', 'PORT'], '5000');
-const restrictedGroups = getEnvVar('RESTRICTED_GROUPS', ['Restrictions', 'RESTRICTED_GROUPS'], 'false').toString();
-const OpenAICompAPI = getEnvVar('ENABLE_OPEN_AI_COMP_API', ['Restrictions', 'ENABLE_OPEN_AI_COMP_API'], 'false').toString();
-const sslValidate = getEnvVar('SSL_VALIDATE', ['Server_Config', 'SSL_VALIDATE'], 'false').toString();
-const PwEncryption = getEnvVar('PW_ENCRYPTION', ['Server_Config', 'PW_ENCRYPTION'], 'false') === 'true';
-const AllowKeygen = getEnvVar('ALLOW_KEYGEN', ['Server_Config', 'ALLOW_KEYGEN'], 'false') === 'true';
-const allowWrittenLogfile = getEnvVar('WRITTEN_LOGFILE', ['Logging', 'WRITTEN_LOGFILE'], 'false').toString();
-const LogIps = getEnvVar('LOG_IPs', ['Logging', 'LOG_IPs'], 'false').toString();
-const anonymousMode = getEnvVar('ANONYMOUS_MODE', ['Logging', 'ANONYMOUS_MODE'], 'false').toString();
+const privateApiUrl         = getEnvVar('PRIVATE_GPT_API_URL', ['PGPT_Url', 'PRIVATE_GPT_API_URL']);
+const requestedLang         = getEnvVar('LANGUAGE', ['Server_Config', 'LANGUAGE'], 'en').toLowerCase();
+const apiUrl                = getEnvVar('API_URL', ['PGPT_Url', 'API_URL']);
+const Port                  = getEnvVar('PORT', ['Server_Config', 'PORT'], '5000');
+const restrictedGroups      = getEnvVar('RESTRICTED_GROUPS', ['Restrictions', 'RESTRICTED_GROUPS'], 'false').toString();
+const OpenAICompAPI         = getEnvVar('ENABLE_OPEN_AI_COMP_API', ['Restrictions', 'ENABLE_OPEN_AI_COMP_API'], 'false').toString();
+const sslValidate           = getEnvVar('SSL_VALIDATE', ['Server_Config', 'SSL_VALIDATE'], 'false').toString();
+const enableSSL             = getEnvVar('ENABLE_TLS', ['Server_Config', 'ENABLE_TLS'], 'false').toLowerCase() === 'true';
+// const EnableTLS             = getEnvVar('ENABLE_TLS', ['Server_Config', 'ENABLE_TLS'], 'false').toString();
+const PwEncryption          = getEnvVar('PW_ENCRYPTION', ['Server_Config', 'PW_ENCRYPTION'], 'false') === 'true';
+const AllowKeygen           = getEnvVar('ALLOW_KEYGEN', ['Server_Config', 'ALLOW_KEYGEN'], 'false') === 'true';
+const allowWrittenLogfile   = getEnvVar('WRITTEN_LOGFILE', ['Logging', 'WRITTEN_LOGFILE'], 'false').toString();
+const LogIps                = getEnvVar('LOG_IPs', ['Logging', 'LOG_IPs'], 'false').toString();
+const anonymousMode         = getEnvVar('ANONYMOUS_MODE', ['Logging', 'ANONYMOUS_MODE'], 'false').toString();
 
 // Funktion zur Pfad-Expansion
 function expandPath(filePath) {
@@ -145,8 +149,11 @@ function expandPath(filePath) {
 }
 
 // Load the public key
-const publicKeyPath = expandPath(getEnvVar('PUBLIC_KEY', ['Server_Config', 'PUBLIC_KEY']));
-const privateKeyPath = expandPath(getEnvVar('PRIVATE_KEY', ['Server_Config', 'PRIVATE_KEY']));
+const publicKeyPath     = expandPath(getEnvVar('PUBLIC_KEY',    ['Server_Config', 'PUBLIC_KEY']));
+const privateKeyPath    = expandPath(getEnvVar('PRIVATE_KEY',   ['Server_Config', 'PRIVATE_KEY']));
+
+const sslKeyPath        = expandPath(getEnvVar('SSL_KEY_PATH',  ['Server_Config', 'SSL_KEY_PATH'])); 
+const sslCertPath       = expandPath(getEnvVar('SSL_CERT_PATH', ['Server_Config', 'SSL_CERT_PATH'])); 
 
 let publicKey;
 let privateKey;
@@ -295,6 +302,9 @@ logEvent('system', 'conf', l.prefix_Public_API_URL, apiUrl, 'info');
 logEvent('system', 'conf', l.prefix_Port, Port, 'info');
 logEvent('system', 'conf', l.prefix_Language, requestedLang, 'info');
 logEvent('system', 'conf', l.prefix_SSL_Validation, sslValidate, 'info');
+logEvent('system', 'conf', l.prefix_EnableTLS, enableSSL, 'info');
+logEvent('system', 'conf', l.prefix_sslKeyPath, sslKeyPath, 'info');
+logEvent('system', 'conf', l.prefix_sslCertPath, sslCertPath, 'info');
 logEvent('system', 'conf', l.prefix_PW_Encryption, PwEncryption ? t.encryptionEnabled : t.encryptionDisabled, 'info');
 logEvent('system', 'conf', l.prefix_Allow_Keygen, AllowKeygen ? t.keygenEnabled : t.keygenDisabled, 'info');
 logEvent('system', 'conf', l.prefix_Private_API_URL, privateKeyPath, 'info'); // Möglicherweise hier ein anderer Prefix benötigt
@@ -548,125 +558,250 @@ function createBasicAuthHeader(username, password) {
     return `Basic ${authString}`;
 }
 
-class TcpServerTransport {
-    constructor(port) {
+
+/* const t = {                             // Beispielhafte Sprachvariablen
+  ConnectionEstablished: 'Verbindung hergestellt',
+  dataReceivedMsg: 'Daten empfangen: ${data}',
+  ResponseSuccessfullySent: 'Antwort erfolgreich gesendet',
+  ConnectionClosed: 'Verbindung geschlossen',
+  ServerStopped: 'Server gestoppt'
+};
+const l = {                             // Beispielhafte Log-Prefixes
+  prefix_tcpServerError: 'TCP-Server Fehler',
+  prefix_Shutdown: 'Herunterfahren'
+};*/
+
+export class TcpServerTransport {
+    /**
+     * Konstruktor
+     * @param {number} port - Port, auf dem der Server lauschen soll.
+     * @param {boolean} enableSSL - true, wenn SSL/TLS verwendet werden soll, ansonsten false.
+     * @param {string} sslKeyPath - Pfad zur SSL-Schlüsseldatei (nur benötigt, wenn enableSSL true ist).
+     * @param {string} sslCertPath - Pfad zur SSL-Zertifikatsdatei (nur benötigt, wenn enableSSL true ist).
+    */
+    constructor(port, enableSSL, sslKeyPath, sslCertPath) {
         this.port = port;
         this.server = null;
         this.clients = new Map(); // Map zur Speicherung der Clients
+        this.enableSSL = enableSSL; // Flag, ob SSL/TLS verwendet werden soll
+  
+    
+        if (!fs.existsSync(sslKeyPath) || !fs.existsSync(sslCertPath)) {
+            logEvent('system', 'TLS', l.prefix_sslError, t.NoTLSCertFound, 'error');
+            process.exit(1);
+        }
+      // 
+        // Falls SSL aktiviert ist, laden wir die TLS-Optionen (Schlüssel und Zertifikat)
+        if (this.enableSSL) {
+            this.tlsOptions = {
+                key: fs.readFileSync(sslKeyPath),
+                cert: fs.readFileSync(sslCertPath)
+                // Falls CA benötigt wird, z. B.:
+                // ca: fs.readFileSync(caPath),
+                // requestCert: false, // oder true, wenn Clients sich per Zertifikat ausweisen sollen
+            };
+        }
     }
-
+  
+    /**
+     * Startet den Server.
+     * @param {Function} onMessage - Callback-Funktion, die auf eingehende Nachrichten reagiert.
+     * @returns {Promise} - Wird erfüllt, wenn der Server erfolgreich gestartet wurde.
+     */
     async start(onMessage) {
         return new Promise((resolve, reject) => {
-            // Server erstellen
-            this.server = net.createServer((socket) => {
-                const clientIP = socket.remoteAddress || 'unknown';
-                const clientPort = socket.remotePort || 'unknown';
-
-                // Client-Informationen in der Map speichern
-                this.clients.set(socket, { ip: clientIP, port: clientPort });
-
-                // Logging: Neue Verbindung
-                if (isLogIpsEnabled) {
-                    if (!isanonymousModeEnabled) logEvent(clientIP, clientPort, 'Connection New', t.ConnectionEstablished, 'info');
-                } else {
-                    if (!isanonymousModeEnabled) logEvent('*****', '****', 'Connection New', t.ConnectionEstablished, 'info');
-                }
-
-                // Ereignis: Daten empfangen
-                socket.on('data', async (data) => {
-                    const client = this.clients.get(socket);
-                    if (isLogIpsEnabled) {
-                        if (!isanonymousModeEnabled) logEvent(client.ip, client.port, 'Data Received', t.dataReceivedMsg.replace('${data}', data.toString()), 'info');
-                    } else {
-                        if (!isanonymousModeEnabled) logEvent('*****', '****', 'Data Received', t.dataReceivedMsg.replace('${data}', data.toString()), 'info');
-                    }
-
-                    try {
-                        const message = JSON.parse(data.toString());
-                        const response = await onMessage(message);
-                        const responseString = JSON.stringify(response) + '\n'; // Hinzufügen des Delimiters
-                        socket.write(responseString, () => {
-                            socket.end();  // Verbindung schließen, wenn das Schreiben fertig ist
-                        });
-
-                        // Logging: Erfolgreiche Antwort
-                        if (isLogIpsEnabled) {
-                            if (!isanonymousModeEnabled) logEvent(client.ip, client.port, 'Response Sent', t.ResponseSuccessfullySent, 'info');
-                        } else {
-                            if (!isanonymousModeEnabled) logEvent('*****', '****', 'Response Sent', t.ResponseSuccessfullySent, 'info');
-                        }
-
-                    } catch (err) {
-                        if (isLogIpsEnabled) {
-                            if (!isanonymousModeEnabled) logEvent(client.ip, client.port, 'Error Processing Message', `Error: ${err.message || err}`, 'error');
-                        } else {
-                            if (!isanonymousModeEnabled) logEvent('*****', '****', 'Error Processing Message', `Error: ${err.message || err}`, 'error');
-                        }
-                        // Senden einer Fehlerantwort mit Delimiter
-                        const errorResponse = JSON.stringify({ error: 'Invalid message format' }) + '\n';
-                        socket.write(errorResponse, () => {
-                            socket.end();  // Verbindung schließen
-                        });
-                    }
+            // Entscheide anhand des enableSSL-Flags, ob ein TLS/SSL-Server oder ein normaler TCP-Server gestartet wird.
+            if (this.enableSSL) {
+                this.server = tls.createServer(this.tlsOptions, (socket) => {
+                    this.handleConnection(socket, onMessage);
                 });
-
-                // Ereignis: Verbindung geschlossen
-                socket.on('close', () => {
-                    const client = this.clients.get(socket);
-                    if (isLogIpsEnabled) {
-                        if (!isanonymousModeEnabled) logEvent(client.ip, client.port, 'Connection Closed', t.ConnectionClosed, 'info');
-                    } else {
-                        if (!isanonymousModeEnabled) logEvent('*****', '****', 'Connection Closed', t.ConnectionClosed, 'info');
-                    }
-                    this.clients.delete(socket); // Client aus der Map entfernen
+            } else {
+                this.server = net.createServer((socket) => {
+                    this.handleConnection(socket, onMessage);
                 });
-
-                // Fehlerbehandlung für einzelne Sockets
-                socket.on('error', (err) => {
-                    const client = this.clients.get(socket);
-                    if (!isanonymousModeEnabled) logEvent(
-                        client?.ip || 'unknown',
-                        client?.port || 'unknown',
-                        'Socket Error',
-                        `Socket error: ${err.message || err}`,
-                        'error'
-                    );
-                });
-            });
-
-            // **Einmaliges Hinzufügen des 'connection'-Listeners außerhalb des 'createServer'-Callbacks**
+            }
+  
+            // Hinzufügen des 'connection'-Listeners (einmalig außerhalb des createServer-Callbacks)
             this.server.on('connection', (socket) => {
-                if (!isanonymousModeEnabled) logEvent('server', socket.remotePort || 'unknown', 'Connection Established', t.ConnectionEstablished, 'info');
-                socket.setKeepAlive(true, 30000); // Keep-Alive für jede Verbindung setzen
+                if (!isanonymousModeEnabled) {
+                    logEvent('server', socket.remotePort || 'unknown', 'Connection Established', t.ConnectionEstablished, 'info');
+                }
+                socket.setKeepAlive(true, 30000); // Keep-Alive für jede Verbindung
             });
-
+      
             // Server starten
             this.server.listen(this.port, () => {
-                if (!isanonymousModeEnabled) logEvent(
-                    'server', this.port, 'Server Start',
-                    `Server listening on port ${this.port}`,
-                    'info'
-                );
+                const modus = this.enableSSL ? 'TLS/SSL' : 'Plain TCP';
+                if (!isanonymousModeEnabled) {
+                    logEvent('server', this.port, 'Server Start', `Server lauscht auf Port ${this.port} [${modus}]`, 'info');
+                }
                 resolve();
             });
-
-            // Server-Ereignis: Fehler
+      
+            // Fehlerbehandlung auf Server-Ebene
             this.server.on('error', (err) => {
-                if (!isanonymousModeEnabled) logEvent(
-                    'server', this.port, l.prefix_tcpServerError,
-                    `Server error: ${err.message || err}`,
-                    'error'
-                );
+                if (!isanonymousModeEnabled) {
+                    logEvent('server', this.port, l.prefix_tcpServerError, `Serverfehler: ${err.message || err}`, 'error');
+                }
                 reject(err);
             });
         });
     }
-
+  
+    /**
+     * Behandelt eingehende Verbindungen.
+     * @param {object} socket - Das Socket-Objekt der Verbindung.
+     * @param {Function} onMessage - Callback, das auf empfangene Nachrichten reagiert.
+     */
+    handleConnection(socket, onMessage) {
+        const clientIP = socket.remoteAddress || 'unknown';
+        const clientPort = socket.remotePort || 'unknown';
+        this.clients.set(socket, { ip: clientIP, port: clientPort });
+  
+        // Logging: Neue Verbindung
+        if (isLogIpsEnabled) {
+            if (!isanonymousModeEnabled) {
+            logEvent(clientIP, clientPort, 'Connection New', t.ConnectionEstablished, 'info');
+            }
+        } else {
+            if (!isanonymousModeEnabled) {
+                logEvent('*****', '****', 'Connection New', t.ConnectionEstablished, 'info');
+            }
+        }
+  
+        socket.on('error', (err) => {
+            const client = this.clients.get(socket);
+            // ECONNRESET speziell behandeln
+            if (err.code === 'ECONNRESET') {
+                // Wenn gewünscht, nur auf „info“-Level loggen oder gar nicht
+                if (!isanonymousModeEnabled) {
+                    if (isLogIpsEnabled) {
+                        logEvent(
+                        client?.ip || 'unknown',
+                        client?.port || 'unknown',
+                        'Socket Warn',
+                        t.ErrorConnReset,
+                        'info' );
+                    } else {
+                        logEvent(
+                        '*****',
+                        '*****',
+                        'Socket Warn',
+                        t.ErrorConnReset,
+                        'info' );
+                    }
+                }
+                return;
+            }
+          
+            // Andere Fehler normal als 'error' loggen
+            if (!isanonymousModeEnabled) {
+                if (isLogIpsEnabled) {
+                    logEvent(
+                    client?.ip || 'unknown',
+                    client?.port || 'unknown',
+                    'Socket Error',
+                    `Socket-Error: ${err.message || err}`,
+                    'error' );
+                } else {
+                    logEvent(
+                    '*****',
+                    '*****',
+                    'Socket Error',
+                    `Socket-Error: ${err.message || err}`,
+                    'error' );
+                };
+            }
+        });
+        // Ereignis: Daten empfangen
+        socket.on('data', async (data) => {
+            const client = this.clients.get(socket);
+            if (isLogIpsEnabled) {
+                if (!isanonymousModeEnabled) {
+                    logEvent(client.ip, client.port, 'Data Received', t.dataReceivedMsg.replace('${data}', data.toString()), 'info');
+                }
+            } else {
+                if (!isanonymousModeEnabled) {
+                    logEvent('*****', '****', 'Data Received', t.dataReceivedMsg.replace('${data}', data.toString()), 'info');
+                    }   
+                }
+  
+            try {
+                const message = JSON.parse(data.toString());
+                const response = await onMessage(message);
+                const responseString = JSON.stringify(response) + '\n'; // Delimiter hinzufügen
+                socket.write(responseString, () => {
+                    socket.end(); // Verbindung schließen, wenn das Schreiben fertig ist
+                });
+      
+                // Logging: Erfolgreiche Antwort
+                if (isLogIpsEnabled) {
+                    if (!isanonymousModeEnabled) {
+                        logEvent(client.ip, client.port, 'Response Sent', t.ResponseSuccessfullySent, 'info');
+                    }
+                } else {
+                    if (!isanonymousModeEnabled) {
+                        logEvent('*****', '****', 'Response Sent', t.ResponseSuccessfullySent, 'info');
+                    }
+                }
+            } catch (err) {
+                if (isLogIpsEnabled) {
+                    if (!isanonymousModeEnabled) {
+                        logEvent(client.ip, client.port, 'Error Processing Message', `Fehler: ${err.message || err}`, 'error');
+                    }
+                } else {
+                    if (!isanonymousModeEnabled) {
+                        logEvent('*****', '****', 'Error Processing Message', `Fehler: ${err.message || err}`, 'error');
+                    }
+                }
+                // Sende eine Fehlerantwort mit Delimiter
+                const errorResponse = JSON.stringify({ error: 'Ungültiges Nachrichtenformat' }) + '\n';
+                socket.write(errorResponse, () => {
+                    socket.end(); // Verbindung schließen
+                });
+            }
+        });
+  
+        // Ereignis: Verbindung geschlossen
+        socket.on('close', () => {
+            const client = this.clients.get(socket);
+            if (isLogIpsEnabled) {
+                if (!isanonymousModeEnabled) {
+                    logEvent(client.ip, client.port, 'Connection Closed', t.ConnectionClosed, 'info');
+                }
+            } else {
+                if (!isanonymousModeEnabled) {
+                logEvent('*****', '****', 'Connection Closed', t.ConnectionClosed, 'info');
+                }
+            }
+            this.clients.delete(socket); // Entferne den Client aus der Map
+        });
+  
+        // Fehlerbehandlung für einzelne Sockets
+        socket.on('error', (err) => {
+            const client = this.clients.get(socket);
+            if (!isanonymousModeEnabled) {
+                logEvent(
+                    client?.ip || 'unknown',
+                    client?.port || 'unknown',
+                    'Socket Error',
+                    `Socket-Fehler: ${err.message || err}`,
+                    'error'
+                );
+            }
+        });
+    }
+  
+    /**
+     * Stoppt den Server und leert die Clientliste.
+     */
     async stop() {
         if (this.server) {
             this.server.close(() => {
-                if (!isanonymousModeEnabled) logEvent('server', this.port, l.prefix_Shutdown, t.ServerStopped, 'info');
-                this.clients.clear(); // Alle Clients aus der Map entfernen
+                if (!isanonymousModeEnabled) {
+                    logEvent('server', this.port, l.prefix_Shutdown, t.ServerStopped, 'info');
+                }
+            this.clients.clear(); // Alle Clients entfernen
             });
         }
     }
@@ -2372,7 +2507,7 @@ async run() {
         throw new Error(t.portInUse.replace('${PORT}', PORT));
     }
 
-    const transport = new TcpServerTransport(PORT);
+    const transport = new TcpServerTransport(PORT, enableSSL, sslKeyPath, sslCertPath);
     await transport.start(async (message) => {
         try {
             // if (!isanonymousModeEnabled) logEvent('client', 'swmsg', 'Incoming Message', `Nachricht empfangen: ${JSON.stringify(message)}`, 'info');

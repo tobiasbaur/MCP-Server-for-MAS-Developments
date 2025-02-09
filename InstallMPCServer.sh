@@ -86,3 +86,12 @@ echo "🛠️ Building the project..."
 npm run build || error_exit "Build failed. Installation aborted."
 
 echo "✅ Setup and build complete!"
+
+# Prompt user before executing the last two commands
+if prompt_yes_no "Do you want to create SSL certificates now?"; then
+  mkdir -p ~/.ssh/certs
+  openssl req -x509 -newkey rsa:2048 -nodes -keyout ~/.ssh/certs/server.key -out ~/.ssh/certs/server.crt -days 365 -subj "/CN=localhost"
+  echo "✔️ SSL certificates created successfully."
+else
+  echo "⚠️ Skipping SSL certificate creation. You can run these commands manually later."
+fi
