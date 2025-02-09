@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     stream = True
     client = OpenAI(
-        base_url="http://localhost:8002/",
+        base_url="http://localhost:8001/",
         api_key=args.api_key
     )
     completion = client.beta.chat.completions.parse(
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         messages=[
             {
                 "role": "system",
-                "content": "You are a helpful assistant. The current date is August 6, 2024. You help users query for the data they are looking for by calling the query function.",
+                "content": "You are a helpful assistant. The current date is August 6, 2025. You help users query for the data they are looking for by calling the query function.",
             },
             {
                 "role": "user",
@@ -84,5 +84,5 @@ if __name__ == "__main__":
         }
     )
 
-    print(completion.choices[0].message)
-    #print(completion.choices[0].message.tool_calls[0].function.parsed_arguments)
+   # print(completion.choices[0].message.tool_calls[0].function.arguments)
+    print(completion.choices[0].message.content)

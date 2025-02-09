@@ -20,18 +20,33 @@ class ChatInstance:
 # data models
 class Message(BaseModel):
     role: str
-    content: str
+    content: str | None
+    tool_calls: Optional[object] = None
+    name: Optional[str] = None
+    tool_call_id: Optional[str] = None
 
+
+class Function(BaseModel):
+    arguments: str
+    name: str
+    parsed_arguments: Optional[object] = None
+
+class ChatCompletionMessageToolCall(BaseModel):
+    id: str
+    type: str = "function"
+    function: Function
 
 class ChatCompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     messages: List[Message]
     max_tokens: Optional[int] = 64000
-    temperature: Optional[float] = 0 #Not used atm
+    temperature: Optional[float] = 0  #Not used atm
     stream: Optional[bool] = False
     response_format: Optional[object] = None
     tools: Optional[object] = None
     groups: Optional[object] = None
+    newSession: Optional[bool] = False
+
 
 
 
@@ -54,10 +69,10 @@ def num_tokens(user_input, answer):
 
     return num_tokens_request, num_tokens_reply, num_tokens_overall
 
+
 def num_tokens_from_string(string: str, encoding_name: str) -> int:
     """Returns the number of tokens in a text string."""
     return len(tiktoken.get_encoding(encoding_name).encode(string))
-
 
 
 def _resp_sync(response: json, request):
@@ -65,23 +80,51 @@ def _resp_sync(response: json, request):
     reply = {}
     for message in request.messages:
         user_input += json.dumps({'role': message.role, 'content': message.content})
-        reply = [{"message": Message(role="assistant", content=response["answer"])}]
-
     num_tokens_request, num_tokens_reply, num_tokens_overall = num_tokens(user_input, response["answer"])
 
     citations = []
     if "sources" in response:
         citations = response["sources"]
 
+    tool_calls= None
+    if "tool_call" in response:
+        try:
+            print(response["tool_call"])
+            tool= json.loads(response["tool_call"])
+            if "arguments" in tool:
+                arguments = tool["arguments"] #  '{"operation":"multiply","a":"123","b":"4324"}'
+                parsed_arguments = json.loads(json.dumps(arguments).strip("\""))
+                print(parsed_arguments)
+            else:
 
+                print(tool)
 
+                try:
+                    parsed_arguments = json.loads(tool)
+                except:
+                    parsed_arguments = tool
+
+            name = "tool"
+            if "name" in tool:
+                name = tool["name"] #'calculator'
+
+            function = Function(arguments=json.dumps(parsed_arguments), name=name, parsed_arguments=parsed_arguments)
+            tool_call = ChatCompletionMessageToolCall(id=response["chatId"], function=function, type="function")
+
+            if tool_calls is None:
+                tool_calls = []
+            tool_calls.append(tool_call)
+
+        except Exception as e:
+            print("Tool Call error" + str(e))
+
+           
     return {
         "id": response["chatId"],
         "object": "chat.completion",
         "created": time.time(),
         "model": request.model,
-        "choices": reply,
-
+        "choices": [{"message": Message(role="assistant", content=clean_response(str(response["answer"])), tool_calls=tool_calls)}],
         "citations": citations,
         "usage": {
             "prompt_tokens": num_tokens_request,
@@ -90,6 +133,11 @@ def _resp_sync(response: json, request):
         }
     }
 
+
+def clean_response(response):
+    # Remove artefacts from reply here
+    response = response.replace("[TOOL_CALLS] ", "")
+    return response
 
 async def _resp_async_generator(response: json, request):
     user_input = ""
@@ -121,7 +169,6 @@ async def _resp_async_generator(response: json, request):
         yield f"data: {json.dumps(chunk)}\n\n"
         await asyncio.sleep(0.05)
     yield "data: [DONE]\n\n"
-
 
 
 
@@ -191,10 +238,6 @@ async def _resp_async_generator_completions(response: json, request):
         yield f"data: {json.dumps(chunk)}\n\n"
         await asyncio.sleep(0.05)
     yield "data: [DONE]\n\n"
-
-
-
-
 
 
 models = [

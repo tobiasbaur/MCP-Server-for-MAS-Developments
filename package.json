@@ -20,7 +20,10 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.1.1",
+    "@modelcontextprotocol/sdk": "^1.4.1",
+    "@remote-mcp/client": "^0.1.0",
+    "@remote-mcp/server": "^0.1.0",
+    "@trpc/client": "^11.0.0-rc.730",
     "axios": "^1.7.9",
     "chalk": "^5.4.1",
     "chokidar": "^4.0.3",
@@ -33,6 +36,7 @@
     "socket.io": "^4.8.1",
     "strip-ansi": "^7.1.0",
     "winston": "^3.17.0",
+    "xmlhttprequest": "^1.8.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {

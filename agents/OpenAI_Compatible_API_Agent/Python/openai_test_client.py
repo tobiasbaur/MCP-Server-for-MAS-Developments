@@ -24,7 +24,8 @@ if __name__ == "__main__":
             messages=[{"role": "system", "content": "Be funny."}, {"role": "user", "content": "Say this is a test"}],
             stream=stream,
             extra_body={
-                "groups": []
+                "groups": [],
+                "newSession": True
             }
         )
         if stream:
