@@ -77,14 +77,14 @@ Choose an operation from the list below. Each example demonstrates a specific se
   - `--token`: Authentication token to be invalidated.
   
 - **Usage Example**:
-  ```bash
-python MCPLogoutClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --token MyToken
-  ```
+```bash
+    python MCPLogoutClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --token MyToken
+```
 
 ---
 
@@ -107,18 +107,18 @@ python MCPLogoutClient.py ^
   - `--language`: Optional language parameter.
   
 - **Usage Example**:
-  ```bash
-python MCPChatClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --question "Hello World" ^
-    --use-public ^
-    --groups "devops,hr" ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --language en
-  ```
+```bash
+    python MCPChatClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --question "Hello World" ^
+        --use-public ^
+        --groups "devops,hr" ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --language en
+```
 
 ### 2.1 MCPContinueChatClient
 - **Purpose**: Continues an existing chat session by sending follow-up messages.
@@ -137,16 +137,16 @@ python MCPChatClient.py ^
   - `--message`: Follow-up message.
   
 - **Usage Example**:
-  ```bash
-python MCPContinueChatClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --conversation-id 12345 ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --message "Can you provide an update?"
-  ```
+```bash
+    python MCPContinueChatClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --conversation-id 12345 ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --message "Can you provide an update?"
+```
 
 ### 2.2 MCPGetChatInfoClient
 - **Purpose**: Retrieves metadata and status information about an existing chat session.
@@ -164,15 +164,15 @@ python MCPContinueChatClient.py ^
   - `--chat-id`: ID of the chat session to retrieve information for.
   
 - **Usage Example**:
-  ```bash
-python MCPGetChatInfoClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --chat-id 6789
-  ```
+```bash
+    python MCPGetChatInfoClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --chat-id 6789
+```
 
 ---
 
@@ -192,14 +192,14 @@ python MCPGetChatInfoClient.py ^
   - `--accept-self-signed`: Accepts self-signed SSL certificates.
 
 - **Usage Example**:
-  ```bash
-python MCPDeleteAllChatsClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --use-ssl ^
-    --accept-self-signed
-  ```
+```bash
+    python MCPDeleteAllChatsClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --use-ssl ^
+        --accept-self-signed
+```
   
 ---
 
@@ -220,15 +220,15 @@ python MCPDeleteAllChatsClient.py ^
   - `--accept-self-signed`: Accepts self-signed SSL certificates.
 
 - **Usage Example**:
-  ```bash
-python MCPDeleteChatClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --chat-id 6789 ^
-    --use-ssl ^
-    --accept-self-signed
-  ```
+```bash
+    python MCPDeleteChatClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --chat-id 6789 ^
+        --use-ssl ^
+        --accept-self-signed
+```
 ---
 
 ### 3.0 MCPCreateSourceClient
@@ -250,15 +250,15 @@ python MCPDeleteChatClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPCreateSourceClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --name "Sample Source" ^
-    --content "This is a test content" ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --groups devops hr
+    python MCPCreateSourceClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --name "Sample Source" ^
+        --content "This is a test content" ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --groups devops hr
 ```
 
 ---
@@ -280,13 +280,13 @@ python MCPCreateSourceClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPGetSourceClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --source-id 12345
+    python MCPGetSourceClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --source-id 12345
 ```
 
 ### 3.2 MCPListSourcesClient
@@ -306,13 +306,13 @@ python MCPGetSourceClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPListSourcesClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --group-name devops
+    python MCPListSourcesClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --group-name devops
 ```
 
 ### 3.3 MCPEditSourceClient
@@ -335,16 +335,16 @@ python MCPListSourcesClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPEditSourceClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --source-id 12345 ^
-    --title "Updated Title" ^
-    --content "Updated content for the source." ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --groups devops finance
+    python MCPEditSourceClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --source-id 12345 ^
+        --title "Updated Title" ^
+        --content "Updated content for the source." ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --groups devops finance
 ```
 
 ### 3.4 MCPDeleteSourceClient
@@ -363,13 +363,13 @@ python MCPEditSourceClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPDeleteSourceClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --source-id 12345
+    python MCPDeleteSourceClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --source-id 12345
 ```
 
 ---
@@ -391,12 +391,12 @@ Lists all the groups available on the MCP server.
 
 - **Usage Example**:
 ```bash
-python MCPListGroupsClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --token MyToken
+    python MCPListGroupsClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --token MyToken
 ```
 
 ### 4.1 MCPStoreGroupClient
@@ -418,14 +418,14 @@ python MCPListGroupsClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPStoreGroupClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --group-name "Team DevOps" ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --description "Group for development and operations"
+    python MCPStoreGroupClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --group-name "Team DevOps" ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --description "Group for development and operations"
 ```
 
 ### 4.2 MCPDeleteGroupClient
@@ -446,13 +446,13 @@ python MCPStoreGroupClient.py ^
 
 - **Usage Example**:
 ```bash
-python MCPDeleteGroupClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --token MyToken ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --group-name "Team DevOps"
+    python MCPDeleteGroupClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --token MyToken ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --group-name "Team DevOps"
 ```
 
 ---
@@ -483,21 +483,21 @@ python MCPDeleteGroupClient.py ^
 
 **Usage Example:**
 ```bash
-python MCPStoreUserClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --token MyToken ^
-    --name John ^
-    --email john@example.com ^
-    --password secret ^
-    --language en ^
-    --roles admin manager ^
-    --groups devops finance ^
-    --usePublic ^
-    --activateFtp ^
-    --ftpPassword ftpPass123
+    python MCPStoreUserClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --token MyToken ^
+        --name John ^
+        --email john@example.com ^
+        --password secret ^
+        --language en ^
+        --roles admin manager ^
+        --groups devops finance ^
+        --usePublic ^
+        --activateFtp ^
+        --ftpPassword ftpPass123
 ```
 
 ### 5.1 MCPEditUserClient
@@ -527,16 +527,16 @@ python MCPStoreUserClient.py ^
 
 - **Usage Example:**
 ```bash
-python MCPEditUserClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --token MyToken ^
-    --user-id 12345 ^
-    --name Jane ^
-    --roles manager devops ^
-    --groups hr devops
+    python MCPEditUserClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --token MyToken ^
+        --user-id 12345 ^
+        --name Jane ^
+        --roles manager devops ^
+        --groups hr devops
 ```
 
 ### 5.2 MCPDeleteUserClient
@@ -555,13 +555,13 @@ python MCPEditUserClient.py ^
 
 - **Usage Example:**
 ```bash
-python MCPDeleteUserClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --use-ssl ^
-    --accept-self-signed ^
-    --token MyToken ^
-    --email jane.doe@example.com
+    python MCPDeleteUserClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --use-ssl ^
+        --accept-self-signed ^
+        --token MyToken ^
+        --email jane.doe@example.com
 ```
 
 ---
