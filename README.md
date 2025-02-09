@@ -499,8 +499,6 @@ You will find the descriptionof how it works in the `Security` section of this d
 
 Next, you should provide the SSL/TLS certificates `server.crt` and `server.key` to ensure that communication with clients and agents is encrypted.
 If you want to use self-signed certificates, you can generate them by executing f.e. the following command:
-
-Generate the SSL/TLS certificates:
 ```bash
 openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 365 -subj "/CN=localhost"
 ```
