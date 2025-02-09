@@ -23,3 +23,4 @@ agent.log
 *.log
 agents/SourceManagerAgent/config.json
 agents/SourceManagerAgent/database/documents.sql
+agents/MCP-Client/.env
