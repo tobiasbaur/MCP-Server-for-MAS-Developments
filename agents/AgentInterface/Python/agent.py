@@ -1,4 +1,4 @@
-# Python/agent.py
+# agent.py
 
 import logging
 import json
@@ -25,23 +25,21 @@ class PrivateGPTAgent:
         self.chosen_groups = config.get("groups", [])
         self.language = config.get("language", "en")  # Standard ist Englisch
 
-        # Überprüfen, ob die gewählte Sprache unterstützt wird
         if self.language not in languages:
             self.language = "en"
             logging.warning(f"Unsupported language '{config.get('language')}'. Falling back to English.")
 
-        self.lang = languages[self.language]  # Sprachwörterbuch für die gewählte Sprache
+        self.lang = languages[self.language]
 
         self.network_client = NetworkClient(self.server_ip, self.server_port, language=self.language)
         self.token = None
 
-        # Register logout to be called upon exit
         atexit.register(self.logout)
 
-        # Perform login
+        # Initialer Login
         self.login()
 
-        # Fetch personal groups
+        # Personalisierte Gruppen abholen
         if self.token:
             self.allowed_groups = self.list_personal_groups()
             if not self.allowed_groups:
@@ -49,17 +47,16 @@ class PrivateGPTAgent:
                 print(self.lang["no_personal_groups"], flush=True)
                 self.allowed_groups = []
 
-            # Validate groups
+            # Validierung der Gruppen
             invalid = self.validate_groups(self.chosen_groups)
             if invalid:
-                # Dem Benutzer eine Meldung ausgeben, bevor wir den Agenten beenden.
                 print(self.lang["invalid_group"].format(groups=invalid), flush=True)
                 logging.error(self.lang["invalid_group_error"])
                 raise GroupValidationError(self.lang["invalid_group"].format(groups=invalid))
         else:
             self.allowed_groups = []
 
-        # Local knowledge base
+        # Lokale Wissensbasis (Beispiel)
         self.knowledge_base = {
             "What is AI?": self.lang["knowledge_ai"],
             "Who created Python?": self.lang["knowledge_python"],
@@ -67,10 +64,6 @@ class PrivateGPTAgent:
         }
 
     def get_lang_message(self, key, **kwargs):
-        """
-        Sichere Methode zum Abrufen von Nachrichten aus dem Sprachwörterbuch.
-        Wenn der Schlüssel nicht existiert, wird eine Standardnachricht zurückgegeben.
-        """
         message = self.lang.get(key, "Message not defined.")
         try:
             return message.format(**kwargs)
@@ -79,17 +72,13 @@ class PrivateGPTAgent:
             return message
 
     def validate_groups(self, groups):
-        """
-        Überprüft, ob alle ausgewählten Gruppen in self.allowed_groups vorhanden sind.
-        Gibt eine Liste der ungültigen Gruppen zurück.
-        """
         if groups is None:
             return []
         invalid = [g for g in groups if g not in self.allowed_groups]
         if invalid:
             logging.error(self.get_lang_message("group_validation_error", error=invalid))
-            return invalid  # Rückgabe der Liste der ungültigen Gruppen
-        return []  # Leere Liste bedeutet, dass alle Gruppen gültig sind
+            return invalid
+        return []
 
     def login(self):
         payload = {
@@ -137,33 +126,29 @@ class PrivateGPTAgent:
                 logging.info(self.lang["personal_groups"].format(groups=personal))
                 return personal
             else:
-                logging.warning(self.lang["list_groups_failed"].format(message=data_block.get("message", self.lang["no_server_message"])))
+                logging.warning(self.lang["list_groups_failed"].format(
+                    message=data_block.get("message", self.lang["no_server_message"])))
                 return []
         except NetworkError as e:
             logging.error(self.lang["list_groups_failed"].format(message=str(e)))
             return []
 
-    def query_private_gpt(self, prompt, use_public=False, language="en", groups=None):
+    def query_private_gpt(self, prompt, use_public=False, language="en", groups=None, _retry_on_token_expired=True):
         if not self.token:
             error_msg = self.get_lang_message("authentication_failed")
             logging.error(error_msg)
             return json.dumps({"error": error_msg})
 
-        # Validieren der Sprache
         if language not in languages:
             language = 'en'
             logging.warning(f"Unsupported language '{language}'. Falling back to English.")
 
         lang = languages[language]
 
-        # Use provided groups or default to self.chosen_groups
         if groups is None:
             groups = self.chosen_groups
         else:
-            # Entferne leere Strings und trimme Gruppen
             groups = [g.strip() for g in groups if g.strip()]
-
-        # Validate and filter groups based on allowed_groups
         relevant_groups = [g for g in groups if g in self.allowed_groups]
 
         payload = {
@@ -177,16 +162,43 @@ class PrivateGPTAgent:
             }
         }
         logging.info(lang["sending_payload"].format(payload=json.dumps(payload)))
+
         try:
             resp = self.network_client.send_request(payload)
             logging.info(lang["received_response"].format(response=resp))
 
+            # ─────────────────────────────────────────────────
+            # Token abgelaufen/ungültig => Re-Login
+            # ─────────────────────────────────────────────────
+            if (
+                (resp.get("status") in [401, 403])
+                or (resp.get("message") in ["token expired", "token invalid"])
+            ):
+                if not _retry_on_token_expired:
+                    return json.dumps({"error": "Token ungültig, Re-Login fehlgeschlagen."})
+
+                # Zusätzlicher Log-Eintrag, um sicher zu sehen, dass der Refresh hier wirklich passiert:
+                logging.warning("TOKEN REFRESH TRIGGERED! (401/403 or token expired/invalid recognized)")
+
+                old_token = self.token
+                self.token = None
+
+                if self.login():
+                    return self.query_private_gpt(
+                        prompt, use_public, language, groups,
+                        _retry_on_token_expired=False
+                    )
+                else:
+                    return json.dumps({"error": "Automatischer Re-Login ist fehlgeschlagen."})
+
+            # Normaler Erfolgsfall
             if resp.get("status") == 200 and resp.get("message") == "success":
                 content = resp.get("content", {})
                 answer = content.get("answer", lang["agent_error"].format(error=lang["no_answer_received"]))
                 return json.dumps({"answer": answer})
             else:
                 return json.dumps({"error": resp.get("message", lang["agent_error"].format(error=lang["unknown_error"]))})
+
         except NetworkError as e:
             error_msg = lang["agent_error"].format(error=str(e))
             logging.error(f"❌ {error_msg}")
@@ -201,9 +213,7 @@ class PrivateGPTAgent:
             return self.query_private_gpt(user_input, groups=groups)
 
     def respond_with_context(self, messages):
-        user_input =  f'{messages[len(messages)-1].content}'
-
-        # PGPT manages history and context itself so we don't need to forward the history.
+        user_input = f'{messages[-1].content}'
         add_context = False
         if add_context:
             messages.pop()
@@ -213,7 +223,7 @@ class PrivateGPTAgent:
 
         result = self.query_private_gpt(user_input)
         return json.loads(result)
-         
+
     def logout(self):
         if not self.token:
             logging.info(self.get_lang_message("no_token_logout"))
@@ -257,8 +267,8 @@ class PrivateGPTAgent:
                     break
                 elif not user_input.strip():
                     continue
+
                 result = self.respond(user_input)
-                # Formatierte Ausgabe der Antwort
                 parsed_result = json.loads(result)
                 if "answer" in parsed_result:
                     answer = parsed_result["answer"]
