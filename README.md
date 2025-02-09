@@ -133,7 +133,7 @@ This server provides a bridge between MCP clients and the PrivateGPT API, allowi
 
 # Why Agents
 An **agent** in relation to **LLMs** (Large Language Models) and **MCP servers** is a specialized software component that acts as an intermediary between language models and applications. It handles tasks such as processing requests, interacting with the LLM via MCP, managing workflows, ensuring security and efficiency within the overall system, and much more. By utilizing agents, complex AI-based applications can be designed to be effective, secure, and scalable.
-**The code for agents in this repsoitory can be used to implement it into own solutions / applications.**
+**The code for agents in this repository can be used to implement it into own solutions / applications.**
 
 ## Interaction Between Agents, LLMs, and MCP Servers
 The interaction of these components enables the development of powerful, scalable, and secure AI applications. Below is a simplified scenario that illustrates this interaction:
@@ -170,27 +170,27 @@ The following security features are implemented to ensure data protection and se
 
 ---
 
-## Transport Layer Security (TLS)
+## 1. Transport Layer Security (TLS)
 - To secure communication between the client and server, TLS can be activate. All data transmitted between the client and server is encrypted using TLS (minimum version 1.2).
 
 ## Why Should TLS Be Enabled Between Client and Server?
 
-### 1. **Encryption of Communication**
+### a. **Encryption of Communication**
 - TLS (Transport Layer Security) ensures that all data transmitted between the client and server is encrypted. This protects sensitive information such as passwords, credit card details, and personal data from eavesdropping attacks (Man-in-the-Middle attacks).
 
-### 2. **Data Integrity**
+### b. **Data Integrity**
 - TLS guarantees that the transmitted data remains unchanged and unaltered. The integrity check ensures that the received data is exactly as it was sent.
 
-### 3. **Authentication**
+### c. **Authentication**
 - TLS enables secure authentication of the server (and optionally the client) through digital certificates. This prevents users from falling victim to phishing attacks on fake websites.
 
-### 4. **Protection Against Man-in-the-Middle Attacks**
+### d. **Protection Against Man-in-the-Middle Attacks**
 - TLS encrypts the connection, making it nearly impossible for attackers to intercept or manipulate traffic. Without TLS, attackers could capture and modify data packets.
 
-### 5. **Compliance with Security Standards and Regulations**
+### e. **Compliance with Security Standards and Regulations**
 - Many regulatory requirements (e.g., GDPR, PCI-DSS) mandate secure data transmission. TLS is a fundamental component of these security requirements.
 
-### 6. **Prevention of Downgrade and Replay Attacks**
+### f. **Prevention of Downgrade and Replay Attacks**
 - TLS protects against attacks that attempt to downgrade a connection to an insecure version (downgrade attacks) or replay previously valid requests (replay attacks).
 
 ## Conclusion
@@ -198,7 +198,7 @@ Enabling TLS between client and server is essential to ensure data privacy, secu
 
 ---
 
-## 1. Password Encryption
+## 2. Password Encryption
 Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryptography. This ensures that sensitive data, such as user passwords, are never transmitted in plaintext.
 
 ### Method
@@ -214,7 +214,7 @@ Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryp
 - **Asymmetric encryption** ensures that only the server can decrypt the password.
 - Even if the communication channel is compromised, encrypted data remains secure.
 
-## 2. Key Management
+## 3. Key Management
 To secure data communication and encryption processes, the following key management principles are followed:
 
 ### Public Key
@@ -234,7 +234,7 @@ To secure data communication and encryption processes, the following key managem
 - Keys can be rotated periodically or upon detection of a security incident. Important: if these are reissued, the clients or AI agents immediately lose access to the MCP server and require a new RSA key (encrypted password)!
 - Old keys are securely invalidated.
 
-## 3. Decryption on the Server
+## 4. Decryption on the Server
 Decryption is exclusively performed on the server using the private key:
 
 ### Process
@@ -245,13 +245,6 @@ Decryption is exclusively performed on the server using the private key:
 ### Secure Handling
 - Decrypted passwords exist in memory only for the duration of processing.
 - Secure memory management practices ensure sensitive data is cleared immediately after use.
-
-## 4. Transport Layer Security (TLS)
-To secure communication between the client and server:
-
-### Optional: TLS Encryption
-- All data transmitted between the server and private GPT is encrypted using TLS (minimum version 1.2).
-- Prevents man-in-the-middle (MITM) attacks and eavesdropping.
 
 ### Certificate Validation
 - Certificates are validated on both sides to ensure the authenticity of the server and client.
@@ -264,9 +257,6 @@ Tokens are used to authenticate requests and ensure only authorized users can ac
 - Tokens are generated upon successful login.
 - They are short-lived and automatically expire after a predefined time.
 - Tokens are signed using HMAC or RSA, making them tamper-proof.
-
-### Secure Storage
-- Tokens are stored securely on the client side (e.g., in memory or encrypted storage).
 
 ## 6. Restriction of Key Generation (Keygen)
 To prevent misuse of the system, key generation (`keygen`) is restricted:
