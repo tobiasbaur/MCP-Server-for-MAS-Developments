@@ -497,7 +497,7 @@ ssh-keygen -f ~/.ssh/id_rsa.pub -e -m PEM > ~/.ssh/id_rsa_public.pem
 After this process, you can create Ciphertext from passwords by using the Encrypted Password Encryption Tool and test the cipher with the Encrypted Password Decryption Tool.
 You will find the descriptionof how it works in the `Security` section of this document.
 
-Next, you should provide the SSL/TLS certificates server.crt and server.key to ensure that communication with clients and agents is encrypted.
+Next, you should provide the SSL/TLS certificates `server.crt` and `server.key` to ensure that communication with clients and agents is encrypted.
 If you want to use self-signed certificates, you can generate them by executing f.e. the following command:
 
 Generate the SSL/TLS certificates:
