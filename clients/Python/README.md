@@ -176,32 +176,59 @@ python MCPGetChatInfoClient.py ^
 
 ---
 
-### 2.3 MCPGetChatInfoClient
-- **Purpose**: Retrieves metadata and status information about an existing chat session.
+### 2.3 MCPDeleteAllChatsClient
+- **Purpose**: Deletes all chat history from the server.
 
 - **Main Features**:
-  - Sends a `get_chat_info` command to the server.
-  - Extracts and displays information about the chat session.
-  
+  - Sends a `delete_all_chats` command to the MCP server.
+  - Supports optional SSL/TLS encryption for secure communication.
+  - Allows accepting self-signed certificates.
+
 - **Key Arguments**:
   - `--server-ip`: IP address of the MCP server.
   - `--server-port`: Port number of the MCP server.
-  - `--use-ssl`: Use SSL/TLS security
-  - `--accept-self-signed`: Accept self signed certificates
   - `--token`: Authentication token.
-  - `--chat-id`: ID of the chat session to retrieve information for.
-  
+  - `--use-ssl`: Enables SSL/TLS encryption.
+  - `--accept-self-signed`: Accepts self-signed SSL certificates.
+
 - **Usage Example**:
   ```bash
-python MCPGetChatInfoClient.py ^
+python MCPDeleteAllChatsClient.py ^
     --server-ip 127.0.0.1 ^
     --server-port 1234 ^
     --token MyToken ^
     --use-ssl ^
-    --accept-self-signed ^
-    --chat-id 6789
+    --accept-self-signed
   ```
+  
+---
 
+### 2.4 MCPDeleteChatClient
+- **Purpose**: Deletes a specific chat from the MCP server.
+
+- **Main Features**:
+  - Sends a `delete_chat` command to the MCP server.
+  - Supports optional SSL/TLS encryption for secure communication.
+  - Allows accepting self-signed certificates.
+
+- **Key Arguments**:
+  - `--server-ip`: IP address of the MCP server.
+  - `--server-port`: Port number of the MCP server.
+  - `--token`: Authentication token.
+  - `--chat-id`: ID of the chat session to be deleted.
+  - `--use-ssl`: Enables SSL/TLS encryption.
+  - `--accept-self-signed`: Accepts self-signed SSL certificates.
+
+- **Usage Example**:
+  ```bash
+python MCPDeleteChatClient.py ^
+    --server-ip 127.0.0.1 ^
+    --server-port 1234 ^
+    --token MyToken ^
+    --chat-id 6789 ^
+    --use-ssl ^
+    --accept-self-signed
+  ```
 ---
 
 ### 3.0 MCPCreateSourceClient
