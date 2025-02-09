@@ -549,11 +549,11 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 ---
 
 ##  `SSL/TLS`
-| Key               | Description                                                                          | Example Value                    |
-|-------------------|--------------------------------------------------------------------------------------|----------------------------------|
-| **ENABLE_TLS**    | If set to `"true"` the server only provides TLS encrypted communication with clients.| `"true"`                         |
-| **SSL_KEY_PATH**  | Specifies the file system path to the server's SSL/TLS Key file used for SSL/TLS.    | `"~/.ssh/certs/server.key"`      |
-| **SSL_CERT_PATH** | Specifies the file system path to the server's certificate used for SSL/TLS.         | `"~/.ssh/certs/server.crt"`      |
+| Key               | Description                                                                                     | Example Value                    |
+|-------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
+| **ENABLE_TLS**    | If set to `"true"` the server only provides TLS encrypted communication with clients and agents.| `"true"`                         |
+| **SSL_KEY_PATH**  | Specifies the file system path to the server's SSL/TLS Key file used for SSL/TLS.               | `"~/.ssh/certs/server.key"`      |
+| **SSL_CERT_PATH** | Specifies the file system path to the server's certificate used for SSL/TLS.                    | `"~/.ssh/certs/server.crt"`      |
        
 ---
 
@@ -566,11 +566,11 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 ---
     
 ## `Logging`
-| Key                 | Description                                                                                                                                                             | Example Value |
-|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| **WRITTEN_LOGFILE** | Enable logfile. If set to `false`, no logfile `logs/server.log` will be written. If this option is set to ‘true’, the log can be retrieved via <ip>:3000 of the server. | `true`        |
-| **LOG_IPs**         | Log IP's of the cleints/agents. If it is set to `false`, this information is replaced by `*****` and cannot be restored.                                                | `false`       |
-| **ANONYMOUS_MODE**  | Deactivate everything that has to do with logging. No communication, errors or similar are written/saved or displayed.                                                  | `false`       |
+| Key                 | Description                                                                                                                                                                      | Example Value |
+|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| **WRITTEN_LOGFILE** | Enable logfile. If set to `false`, no logfile `logs/server.log` will be written. If this option is set to ‘true’, the log can be retrieved via `http://<ip>:3000' of the server. | `true`        |
+| **LOG_IPs**         | Log IP's of the cleints/agents. If it is set to `false`, this information is replaced by `*****` and cannot be restored.                                                         | `false`       |
+| **ANONYMOUS_MODE**  | Deactivate everything that has to do with logging. No communication, errors or similar are written/saved or displayed.                                                           | `false`       |
 
 
 ## `Feature Activation/Deactivation`
