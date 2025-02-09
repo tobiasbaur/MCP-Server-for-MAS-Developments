@@ -52,15 +52,15 @@ Choose an operation from the list below. Each example demonstrates a specific se
   
   
 - **Usage Example**:
-  ```bash
-python MCPLoginClient.py ^
-    --server-ip 127.0.0.1 ^
-    --server-port 1234 ^
-    --email user@example.com ^
-    --password secret ^
-    --use-ssl ^
-    --accept-self-signed
-  ```
+```bash
+    python MCPLoginClient.py ^
+        --server-ip 127.0.0.1 ^
+        --server-port 1234 ^
+        --email user@example.com ^
+        --password secret ^
+        --use-ssl ^
+        --accept-self-signed
+```
 
 ### 1.2 MCPLogoutClient
 - **Purpose**: Logs out an authenticated user by invalidating their session token.
