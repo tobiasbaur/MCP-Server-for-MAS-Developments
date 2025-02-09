@@ -20,10 +20,10 @@
   - [Flexibility](#flexibility)
 - [**Overview**](#overview)
 - [**Security Features Overview**](#security)
-  - [1. Transport Layer Security (TLS)](#transport-layer-security-(tls))
-  - [2. Password Encryption](#1-password-encryption)
-  - [3. Key Management](#2-key-management)
-  - [4. Decryption on the Server](#3-decryption-on-the-server)
+  - [1. Transport Layer Security (TLS)](#1-transport-layer-security-(tls))
+  - [2. Password Encryption](#2-password-encryption)
+  - [3. Key Management](#3-key-management)
+  - [4. Decryption on the Server](#4-decryption-on-the-server)
   - [5. Authorization Tokens](#5-authorization-tokens)
   - [6. Restriction of Key Generation (Keygen)](#6-restriction-of-key-generation-keygen)
   - [7. Certificate-Based Access Control (CBAC)](#7-certificate-based-access-control-cbac)
@@ -496,6 +496,16 @@ ssh-keygen -f ~/.ssh/id_rsa.pub -e -m PEM > ~/.ssh/id_rsa_public.pem
 
 After this process, you can create Ciphertext from passwords by using the Encrypted Password Encryption Tool and test the cipher with the Encrypted Password Decryption Tool.
 You will find the descriptionof how it works in the `Security` section of this document.
+
+Next, you should provide the SSL/TLS certificates server.crt and server.key to ensure that communication with clients and agents is encrypted.
+If you want to use self-signed certificates, you can generate them by executing f.e. the following command:
+
+Generate the SSL/TLS certificates:
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 365 -subj "/CN=localhost"
+```
+
+Note: Clients and agents can detect that the server uses self-signed certificates, as these are potentially insecure compared to official certificates where the organisation is checked and more. However, clients and agents can accept communication with these certificates with the appropriate parameter (see description of the respective client and agent parameters).
 
 ---
 
