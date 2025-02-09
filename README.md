@@ -20,6 +20,7 @@
   - [Flexibility](#flexibility)
 - [**Overview**](#overview)
 - [**Security Features Overview**](#security)
+  - [Transport Layer Security (TLS)](#transport-layer-security-(tls))
   - [1. Password Encryption](#1-password-encryption)
   - [2. Key Management](#2-key-management)
   - [3. Decryption on the Server](#3-decryption-on-the-server)
@@ -62,6 +63,7 @@
     - [Language](#language)
     - [SSL Validation](#ssl-validation)
     - [Encryption](#encryption)
+    - [SSL/TLS](#ssl-tls)
   - [Restrictions](#restrictions)
     - [Group Restrictions](#restrictions)
 	- [Enable OpenAI compatible API](#restrictions)
@@ -166,6 +168,36 @@ To mitigate these risks, it is essential to encrypt these passwords and handle o
 # Security
 The following security features are implemented to ensure data protection and secure communication between the client application and server. These features cover encryption, decryption, key management, and transport security.
 
+---
+
+## Transport Layer Security (TLS)
+- To secure communication between the client and server, TLS can be activate. All data transmitted between the client and server is encrypted using TLS (minimum version 1.2).
+
+## Why Should TLS Be Enabled Between Client and Server?
+
+### 1. **Encryption of Communication**
+- TLS (Transport Layer Security) ensures that all data transmitted between the client and server is encrypted. This protects sensitive information such as passwords, credit card details, and personal data from eavesdropping attacks (Man-in-the-Middle attacks).
+
+### 2. **Data Integrity**
+- TLS guarantees that the transmitted data remains unchanged and unaltered. The integrity check ensures that the received data is exactly as it was sent.
+
+### 3. **Authentication**
+- TLS enables secure authentication of the server (and optionally the client) through digital certificates. This prevents users from falling victim to phishing attacks on fake websites.
+
+### 4. **Protection Against Man-in-the-Middle Attacks**
+- TLS encrypts the connection, making it nearly impossible for attackers to intercept or manipulate traffic. Without TLS, attackers could capture and modify data packets.
+
+### 5. **Compliance with Security Standards and Regulations**
+- Many regulatory requirements (e.g., GDPR, PCI-DSS) mandate secure data transmission. TLS is a fundamental component of these security requirements.
+
+### 6. **Prevention of Downgrade and Replay Attacks**
+- TLS protects against attacks that attempt to downgrade a connection to an insecure version (downgrade attacks) or replay previously valid requests (replay attacks).
+
+## Conclusion
+Enabling TLS between client and server is essential to ensure data privacy, security, and communication integrity. It not only protects sensitive information but also helps meet compliance requirements and increases user trust.
+
+---
+
 ## 1. Password Encryption
 Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryptography. This ensures that sensitive data, such as user passwords, are never transmitted in plaintext.
 
@@ -217,8 +249,8 @@ Decryption is exclusively performed on the server using the private key:
 ## 4. Transport Layer Security (TLS)
 To secure communication between the client and server:
 
-### TLS Encryption
-- All data transmitted between the client and server is encrypted using TLS (minimum version 1.2).
+### Optional: TLS Encryption
+- All data transmitted between the server and private GPT is encrypted using TLS (minimum version 1.2).
 - Prevents man-in-the-middle (MITM) attacks and eavesdropping.
 
 ### Certificate Validation
@@ -511,10 +543,18 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 | Key               | Description                                                                          | Example Value                    |
 |-------------------|--------------------------------------------------------------------------------------|----------------------------------|
 | **PW_ENCRYPTION** | If set to `"true"` the server only accepts passwords in Ciphertext.                  | `"false"`                        |
-| **PUBLIC_KEY**    | Specifies the file system path to the server's public PEM file used for SSL/TLS.     | `"~/.ssh/id_rsa_public.pem"`     |
-| **PRIVATE_KEY**   | Specifies the file system path to the server's private key file used for decryption. | `"~/.ssh/id_rsa_public.pem"`     |
+| **PUBLIC_KEY**    | Specifies the file system path to the server's public PEM file used for RSA.         | `"~/.ssh/id_rsa_public.pem"`     |
+| **PRIVATE_KEY**   | Specifies the file system path to the server's private key file used for RSA.        | `"~/.ssh/id_rsa_public.pem"`     |
 
+---
 
+##  `SSL/TLS`
+| Key               | Description                                                                          | Example Value                    |
+|-------------------|--------------------------------------------------------------------------------------|----------------------------------|
+| **ENABLE_TLS**    | If set to `"true"` the server only provides TLS encrypted communication with clients.| `"true"`                         |
+| **SSL_KEY_PATH**  | Specifies the file system path to the server's SSL/TLS Key file used for SSL/TLS.    | `"~/.ssh/certs/server.key"`      |
+| **SSL_CERT_PATH** | Specifies the file system path to the server's certificate used for SSL/TLS.         | `"~/.ssh/certs/server.crt"`      |
+       
 ---
 
 ## `Restrictions`

@@ -85,6 +85,10 @@ npm install dotenv winston moment chalk figlet express socket.io chokidar strip-
 echo "🛠️ Building the project..."
 npm run build || error_exit "Build failed. Installation aborted."
 
+# Logfile Server
+echo "🔧 Installing index.html..."
+cp src/public dist/ -R
+
 echo "✅ Setup and build complete!"
 
 # Prompt user before executing the last two commands
