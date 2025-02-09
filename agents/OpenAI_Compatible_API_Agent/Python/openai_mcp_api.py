@@ -11,7 +11,8 @@ from starlette.responses import StreamingResponse
 from fastapi import FastAPI, Request, HTTPException
 from threading import local
 
-from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import models
+from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import (ChatInstance, \
+    ChatCompletionRequest, CompletionRequest, _resp_sync, _resp_async_generator, models, Message, _resp_async_generator_completions, _resp_sync_completions)
 from ...AgentInterface.Python.agent import PrivateGPTAgent
 from ...AgentInterface.Python.config import Config, ConfigError
 
@@ -110,14 +111,14 @@ async def chat_completions(request: ChatCompletionRequest):
         return _resp_sync(response, request)
 
 @app.post("/completions")
-async def completions(request: ChatCompletionRequest):
+async def completions(request: CompletionRequest):
     headers = getattr(request_context, "headers", {})
     #print(headers)
 
     client_api_key = str(headers['authorization']).split(" ")[1]
     #print("API KEY: " + client_api_key)
 
-    if request.messages:
+    if request.prompt:
         whitelist_keys = config.get("whitelist_keys", [])
         if len(whitelist_keys) > 0 and client_api_key not in whitelist_keys:
             response = {
@@ -133,7 +134,7 @@ async def completions(request: ChatCompletionRequest):
                 return _resp_sync(response, request)
 
         pgpt = PrivateGPTAgent(config)
-        response = pgpt.respond_with_context(request.messages)
+        response = pgpt.respond_with_context([Message(role="user", content=request.prompt)])
         if "answer" not in response:
             response["answer"] = "No Response received"
 
@@ -145,77 +146,14 @@ async def completions(request: ChatCompletionRequest):
     print(f"💡 Response: {response["answer"]}")
     if request.stream:
         return StreamingResponse(
-            _resp_async_generator(response, request), media_type="application/x-ndjson"
+            _resp_async_generator_completions(response, request), media_type="application/x-ndjson"
         )
     else:
-        return _resp_sync(response, request)
+        return _resp_sync_completions(response, request)
 
 
 
-def _resp_sync(response: json, request):
-    user_input = ""
-    for message in request.messages:
-        user_input += json.dumps({'role': message.role, 'content': message.content})
 
-    num_tokens_request = num_tokens_from_string(user_input, "o200k_base")
-    num_tokens_reply = num_tokens_from_string(response["answer"], "o200k_base")
-    num_tokens_overall = num_tokens_request + num_tokens_reply
-    citations = []
-    if "sources" in response:
-        citations = response["sources"]
-
-    return {
-        "id": response["chatId"],
-        "object": "chat.completion",
-        "created": time.time(),
-        "model": request.model,
-        "choices": [{"message": Message(role="assistant", content=response["answer"])}],
-        "citations": citations,
-        "usage": {
-            "prompt_tokens": num_tokens_request,
-            "completion_tokens": num_tokens_reply,
-            "total_tokens": num_tokens_overall
-        }
-    }
-
-async def _resp_async_generator(response: json, request):
-    user_input = ""
-    for message in request.messages:
-        user_input += json.dumps({'role': message.role, 'content': message.content})
-
-    num_tokens_request = num_tokens_from_string(user_input, "o200k_base")
-    num_tokens_reply = num_tokens_from_string(response["answer"], "o200k_base")
-    num_tokens_overall = num_tokens_request + num_tokens_reply
-
-    tokens = response["answer"].split(" ")
-    citations = []
-    if "sources" in response:
-        citations = response["sources"]
-
-    for i, token in enumerate(tokens):
-        chunk = {
-            "id": i,
-            "object": "chat.completion.chunk",
-            "created": time.time(),
-            "model": request.model,
-            "choices": [{"delta": {"content": token + " "}}],
-            "citations": citations,
-            "usage": {
-                "prompt_tokens": num_tokens_request,
-                "completion_tokens": num_tokens_reply,
-                "total_tokens": num_tokens_overall
-            }
-        }
-        yield f"data: {json.dumps(chunk)}\n\n"
-        await asyncio.sleep(0.05)
-    yield "data: [DONE]\n\n"
-
-
-def num_tokens_from_string(string: str, encoding_name: str) -> int:
-    """Returns the number of tokens in a text string."""
-    encoding = tiktoken.get_encoding(encoding_name)
-    num_tokens = len(encoding.encode(string))
-    return num_tokens
 
 
 @app.get("/models")

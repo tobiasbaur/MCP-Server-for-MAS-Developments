@@ -92,12 +92,37 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
      python -m agents.OpenAI_Compatible_API_Agent.Python.openai_mcp_api
      ```
 
+6. **Generate API key**
+    Generate a key with the following command:
+    ```bash
+     python -m agents.OpenAI_Compatible_API_Agent.Python.generate_api_key --email "<PGPT account>" --password "<PGPT Password>"
+     ```
+    This API key can be used for OpenAI compatible Clients. Make sure you either enter it to the config under whitelist_keys (see 4.1 and 4.2) or whitelist_keys is empty (no check, but prone to errors)
 ---
 
 ## Utilisation
 - **Use libraries (like litellm, ollama, smolagents) or tools (like Msty) to use PGPT with the OpenAI API interface:**
-   Use the API Key you created with generate_api_key.py when required.
-   
+  
+Some example usages for external tools:
+
+- Usage in Msty:
+  - To use the API in MSTY, add a remote server and add "<http://ip:port>" and your API key 
+
+- Usage in Continue:
+  -   To use the API in Continue (Visual Studio/Pycharm Plugin) add this to your config:
+```json
+  {
+      "model": "pgpt",
+      "title": "PGPT",
+      "systemMessage": "You are an expert software developer. You give helpful and concise responses.",
+      "apiKey": "<your-api-key>",
+      "apiBase": "http://<ip:port>",
+      "provider": "openai"
+    }
+```
+
+- Usage with OpenAI Library:
+  - See openai_test_client.py for an example. 
 ---
 
 ## License
