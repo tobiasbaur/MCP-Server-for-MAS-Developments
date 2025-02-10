@@ -1,5 +1,5 @@
+import json
 from pathlib import Path
-
 
 from starlette.responses import StreamingResponse
 
@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request, HTTPException
 from threading import local
 
 from agents.OpenAI_Compatible_API_Agent.Python.open_ai_helper import ChatInstance, \
-    ChatCompletionRequest, _resp_sync, _resp_async_generator, models
+    ChatCompletionRequest, CompletionRequest, _resp_sync, _resp_async_generator, models, Message, _resp_async_generator_completions, _resp_sync_completions
 from .pgpt_api import PrivateGPTAPI
 
 from ...AgentInterface.Python.config import Config, ConfigError
@@ -38,13 +38,21 @@ async def store_request_headers(request: Request, call_next):
 @app.post("/chat/completions")
 async def chat_completions(request: ChatCompletionRequest):
     headers = getattr(request_context, "headers", {})
-    client_api_key = str(headers['authorization']).split(" ")[1]
+    try:
+        client_api_key = str(headers['authorization']).split(" ")[1]
+    except:
+           client_api_key = "dG9iaWFzLmJhdXJAZnVqaXRzdS5jb206TmV3YmF1cjMwJSY="
     groups = default_groups
+    force_new_session = False
+
     if request.groups:
         groups = request.groups
+    if request.newSession:
+        force_new_session = True
+
     print("Groups: " + str(groups))
 
-    if request.messages:
+    if  request.messages:
         #Check if this api-key already has a running instance
         indices = [i for i, x in enumerate(instances) if
                    x.api_key == client_api_key]
@@ -57,6 +65,11 @@ async def chat_completions(request: ChatCompletionRequest):
                 print("⚠️ New Groups requested, switching to new Chat..")
                 config.set_value("groups", groups)
                 instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
+            elif force_new_session:
+                print("⚠️ New Session Requested, switching to new Chat..")
+                config.set_value("groups", groups)
+                instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
+
             pgpt = instances[index].agent
 
         else:
@@ -69,6 +82,7 @@ async def chat_completions(request: ChatCompletionRequest):
 
         if pgpt.logged_in:
             response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
+
             if "answer" not in response:
                 response["answer"] = "No Response received"
             if "answer" in response and response["answer"] == "error":
@@ -92,8 +106,10 @@ async def chat_completions(request: ChatCompletionRequest):
     else:
         return _resp_sync(response, request)
 
+
+# legacy completions API
 @app.post("/completions")
-async def completions(request: ChatCompletionRequest):
+async def completions(request: CompletionRequest):
     headers = getattr(request_context, "headers", {})
     client_api_key = str(headers['authorization']).split(" ")[1]
     groups = default_groups
@@ -101,7 +117,7 @@ async def completions(request: ChatCompletionRequest):
         groups = request.groups
     print("Groups: " + str(groups))
 
-    if request.messages:
+    if request.prompt:
 
         #otherwise connect via api-key
         config.set_value("groups", groups)
@@ -109,7 +125,8 @@ async def completions(request: ChatCompletionRequest):
         # remember that we already have an instance for the api key
 
         if pgpt.logged_in:
-            response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
+            response = pgpt.respond_with_context([Message(role="user", content=request.prompt)], request.response_format, request.tools)
+
             if "answer" not in response:
                 response["answer"] = "No Response received"
             if "answer" in response and response["answer"] == "error":
@@ -126,12 +143,12 @@ async def completions(request: ChatCompletionRequest):
             "answer": "No Input given",
         }
 
-    if request.stream:
+    if request.stream :
         return StreamingResponse(
-            _resp_async_generator(response, request), media_type="application/x-ndjson"
+            _resp_async_generator_completions(response, request), media_type="application/x-ndjson"
         )
     else:
-        return _resp_sync(response, request)
+        return _resp_sync_completions(response, request)
 
 
 

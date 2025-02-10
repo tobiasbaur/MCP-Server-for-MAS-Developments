@@ -23,3 +23,6 @@ agent.log
 *.log
 agents/SourceManagerAgent/config.json
 agents/SourceManagerAgent/database/documents.sql
+/tests/mcp-cli/undefined/
+/agents/MCP-Client/undefined/
+agents/MCP-Client/.env
