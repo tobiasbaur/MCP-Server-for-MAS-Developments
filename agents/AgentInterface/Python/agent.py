@@ -91,7 +91,7 @@ class PrivateGPTAgent:
         logging.info(self.get_lang_message("login_attempt"))
         try:
             resp = self.network_client.send_request(payload)
-            logging.info(self.get_lang_message("received_response", response=resp))
+            #logging.info(self.get_lang_message("received_response", response=resp))
 
             if resp.get("status") == 200 and resp.get("message") == "success":
                 self.token = resp.get("token")
@@ -161,11 +161,11 @@ class PrivateGPTAgent:
                 "language": language
             }
         }
-        logging.info(lang["sending_payload"].format(payload=json.dumps(payload)))
+        #logging.info(lang["sending_payload"].format(payload=json.dumps(payload)))
 
         try:
             resp = self.network_client.send_request(payload)
-            logging.info(lang["received_response"].format(response=resp))
+            #logging.info(lang["received_response"].format(response=resp))
 
             # ─────────────────────────────────────────────────
             # Token abgelaufen/ungültig => Re-Login
@@ -207,7 +207,7 @@ class PrivateGPTAgent:
     def respond(self, user_input, groups=None):
         response = self.knowledge_base.get(user_input, None)
         if response:
-            logging.info(self.get_lang_message("knowledge_response", input=user_input))
+            #logging.info(self.get_lang_message("knowledge_response", input=user_input))
             return json.dumps({"answer": response})
         else:
             return self.query_private_gpt(user_input, groups=groups)

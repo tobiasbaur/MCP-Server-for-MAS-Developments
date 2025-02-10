@@ -38,7 +38,7 @@ class NetworkClient:
 
     def send_request(self, payload):
         payload_json = json.dumps(payload)
-        logging.info(f"Prepared payload: {payload_json}")
+        #logging.info(f"Prepared payload: {payload_json}")
 
         for attempt in range(1, self.retries + 1):
             client_socket = None
@@ -71,12 +71,12 @@ class NetworkClient:
                 logging.info(self.get_lang_message("connection_established"))
                 
                 # Anfrage senden
-                logging.info(
-                    self.get_lang_message(
-                        "sending_payload",
-                        payload=payload_json
-                    )
-                )
+                #logging.info(
+                #    self.get_lang_message(
+                #        "sending_payload",
+                #        payload=payload_json
+                #    )
+                #)
                 client_socket.sendall((payload_json + '\n').encode("utf-8"))
                 
                 # Alle Daten empfangen, bis Server von sich aus schließt oder Timeout
@@ -95,7 +95,7 @@ class NetworkClient:
                         break
                 
                 decoded = response.decode("utf-8").strip()
-                logging.info(f"Received response: {decoded}")
+                #logging.info(f"Received response: {decoded}")
                 
                 if not decoded:
                     raise ValueError("Empty response received")

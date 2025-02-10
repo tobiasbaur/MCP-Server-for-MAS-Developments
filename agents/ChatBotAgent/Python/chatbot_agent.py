@@ -204,8 +204,10 @@ def connect_to_mcp_server():
             return True
     except Exception as e:
         msg = "Could not connect to MCP server: " + str(e)
-        logging.error(msg, extra={"component": "MCP", "tag": "CONNECT", "message_type": "ERROR"})
-        raise Exception(msg)
+        # Begrenze die Nachricht auf 100 Zeichen
+        limited_msg = (msg[:97] + '...') if len(msg) > 100 else msg
+        logging.error(limited_msg, extra={"component": "MCP", "tag": "CONNECT", "message_type": "ERROR"})
+        raise Exception(limited_msg)
 
 # ───────────────────────────────────────────────────────────────
 # Flask Middleware: Authentifizierung
@@ -305,8 +307,10 @@ def ask():
                 "reason": f"Could not connect to MCP server: {str(e)}"
             }
         }
-        logging.error(f"MCP connection error: {e}. Send FIPA ACL failure to connected agents.",
+        logging.error(f"MCP connection error: {e}.",
                       extra={"component": "MCP", "tag": "CONNECT", "message_type": "ERROR"})
+        logging.info(f"Send FIPA ACL failure to connected agents.",
+                      extra={"component": "FIPA", "tag": "ACL", "message_type": "INFO"})
         return jsonify(failure_message), 200
 
     # Falls die Verbindung erfolgreich war, wird die Frage an den Agenten weitergereicht.
