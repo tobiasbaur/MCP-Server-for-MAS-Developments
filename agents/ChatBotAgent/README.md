@@ -2,33 +2,33 @@
 # PrivateGPT ChatBot Agent
 
 ## Overview
-The **PrivateGPT ChatBot Agent** is a core component of the Fujitsu PrivateGPT multi-agent system. It serves as a client that communicates with a private GPT server to answer questions and provide information. The agent supports both local knowledge data and server-based responses and uses **FIPA ACL (Agent Communication Language)** to standardize communications with other agents in the system.
+The **PrivateGPT ChatBot Agent** is a crucial component of the Fujitsu PrivateGPT multi-agent system. It acts as a client that communicates with a private GPT server to respond to queries and provide information. This agent leverages both local knowledge databases and server-based responses, employing **FIPA ACL (Agent Communication Language)** to standardize communications within the system.
 
 ---
 
 ## Features
 - **Multi-Agent Communication via FIPA ACL:**  
-  - Processes structured messages with standard fields such as `performative`, `sender`, `receiver`, `ontology`, and `content`.
-  - Returns FIPA ACL failure messages when a connection to the MCP server cannot be established.
+  - Handles structured messages with standardized fields such as `performative`, `sender`, `receiver`, `ontology`, and `content`.
+  - Sends FIPA ACL failure messages if a connection to the MCP server cannot be established.
   
-- **Flask API Server:**  
-  - Provides RESTful endpoints (e.g., `/ask`, `/logs`, `/status`) using Flask.
-  - Serves requests with Waitress, ensuring production-readiness.
-  - Implements Cross-Origin Resource Sharing (CORS) for all origins (`origins: "*"`) so that requests from any domain are allowed.
+- **Production WSGI Servers: Waitress & Gunicorn:**  
+  - Manages RESTful endpoints (e.g., `/ask`, `/logs`, `/status`) using Flask.
+  - Uses Waitress for serving requests in Windows environments and Gunicorn for Unix-based systems, ensuring readiness for production environments.
+  - Implements Cross-Origin Resource Sharing (CORS) to allow requests from any domain (`origins: "*"`) for broad compatibility.
   
 - **Authentication:**  
-  - Endpoints (except OPTIONS and `/status`) require an API key sent via the `X-API-KEY` header.
+  - All endpoints, except for `OPTIONS` and `/status`, require an API key sent via the `X-API-KEY` header.
   
 - **MCP Server Connectivity:**  
-  - Validates connectivity to the MCP server (as defined in `config.json`) before processing requests.
+  - Ensures connectivity to the MCP server (as defined in `config.json`) is validated before processing requests.
   
 - **Logging:**  
-  - Detailed logs are maintained for both the agent (in `agent.log`) and the Flask server (in `flask.log`).
+  - Maintains detailed logs for both the agent operations (`agent.log`) and the Flask server (`flask.log`).
 
 ## Prerequisites
-- **Python:** 3.8 or higher
+- **Python:** Version 3.8 or higher
 - **Dependencies:**  
-  Install required packages as listed in the corresponding `requirements.txt` (e.g., Flask, waitress, flask-cors, paho-mqtt, paramiko, etc.)
+  Install the required packages listed in the corresponding `requirements.txt` which includes Flask, waitress (for Windows), gunicorn (for Unix-based systems), flask-cors, paho-mqtt, paramiko, etc.
 
 ---
 
@@ -45,7 +45,6 @@ The **PrivateGPT ChatBot Agent** is a core component of the Fujitsu PrivateGPT m
      python -m venv venv
      .\venv\Scripts\activate
      ```
-     
    - **Unix/MacOS:**
      ```bash
      python -m venv venv
@@ -58,7 +57,7 @@ The **PrivateGPT ChatBot Agent** is a core component of the Fujitsu PrivateGPT m
    ```
 
 4. **Configure the Agent:**
-   Copy the example configuration file and adjust it to your environment:
+   Copy the example configuration file and adjust it according to your environment:
 
    ```bash
    cp agents/ChatBotAgent/config.json.example agents/ChatBotAgent/config.json
@@ -82,15 +81,24 @@ The **PrivateGPT ChatBot Agent** is a core component of the Fujitsu PrivateGPT m
    }
    ```
 
-   **Note:** All parameters, including `email` and `password`, are read exclusively from this JSON file.
+   **Note:** All sensitive parameters, such as `email` and `password`, should be securely stored and managed.
 
 ## Running the Agent
-To start the ChatBot Agent, ensure you're in the repository's root directory and run:
+- **Using Waitress (Windows):**
+  To start the ChatBot Agent, ensure you are in the repository's root directory and execute:
 
-```bash
-python -m agents.ChatBotAgent.Python.chatbot_agent
-```
-The agent will launch a Flask API server (using Waitress) on the configured `api_ip` and `api_port`, and it will start its internal processing loop in a separate thread.
+  ```bash
+  python -m agents.ChatBotAgent.Python.chatbot_agent
+  ```
+
+- **Using Gunicorn (Unix-based systems):**
+  To start the application using Gunicorn, run the following command:
+
+  ```bash
+  gunicorn -w 4 -b 0.0.0.0:5001 agents.ChatBotAgent.Python.chatbot_agent:app
+  ```
+
+  This command launches the Flask API server using Gunicorn on the configured `api_ip` and `api_port` and uses multiple workers to handle requests efficiently. The `fcntl` package is needed to run this under Linux, use `pip` to install it.
 
 ---
 
@@ -98,7 +106,7 @@ The agent will launch a Flask API server (using Waitress) on the configured `api
 
 ### `/ask` (POST)
 - **Purpose:**  
-  Accepts a question for the ChatBot Agent. The endpoint supports both a **FIPA ACL** structured message and a legacy JSON format.
+  Accepts questions for the ChatBot Agent. This endpoint supports both a **FIPA ACL** structured message and a legacy JSON format.
   
 - **Authentication:**  
   Requires the `X-API-KEY` header with the correct API key.
@@ -131,46 +139,32 @@ The agent will launch a Flask API server (using Waitress) on the configured `api
   }
   ```
   
----
-
 - **Response:**  
-  Returns a JSON object containing the generated answer from the PrivateGPT server. If the MCP server connection fails, a FIPA ACL failure message is returned.
+  Returns a JSON object containing the answer generated by the PrivateGPT server. If the MCP server connection fails, a FIPA ACL failure message is returned.
 
 ### `/logs` (GET)
 - **Purpose:**  
-  Retrieves the contents of the Flask log file (`flask.log`) for debugging purposes.
+  Provides access to the Flask server's log file (`flask.log`) for debugging and monitoring purposes.
 
 ### `/status` (GET)
 - **Purpose:**  
-  Provides a simple JSON message confirming that the agent is running. This endpoint does **not** require authentication.
+  Outputs a simple JSON message confirming that the agent is operational. This endpoint does **not** require authentication.
   
 ---
 
 ## Multi-Agent Communication & FIPA ACL
-The ChatBot Agent uses **FIPA ACL** to structure its communications with other agents. Key points include:
-
-- **Standardized Message Fields:**  
-  Each FIPA ACL message includes:
-  - `performative` (e.g., "request", "failure")
-  - `sender` and `receiver` identifiers
-  - `ontology` defining the domain (e.g., `fujitsu-iot-ontology`)
-  - `content` containing the actual data or question
-  
-- **Failure Handling:**  
-  If the MCP server connection fails during a request to `/ask`, the agent returns a FIPA ACL failure message to inform the sender of the issue.
-
-This structured messaging facilitates reliable interactions in a multi-agent system.
+The ChatBot Agent utilizes **FIPA ACL** to structure its communications with other agents, ensuring reliable interactions within a multi-agent system. It provides standardized message fields for consistency and effective communication.
 
 ---
 
 ## Logging & Debugging
 - **Agent Logs:**  
-  Key events, errors, and status messages are logged to `agent.log`.
+  Key events, errors, and status updates are logged in `agent.log`.
 
 - **Flask Logs:**  
-  Flask-specific errors and request logs are maintained in `flask.log`.
+  Logs specific to the Flask server are stored in `flask.log`.
 
-These logs are essential for troubleshooting and monitoring the agent's operation.
+These logs are critical for troubleshooting and provide insights into the agent's operation.
 
 ---
 
@@ -185,5 +179,4 @@ Agent: The system is running normally.
 
 ---
 
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+
