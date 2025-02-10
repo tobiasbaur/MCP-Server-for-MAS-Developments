@@ -1,9 +1,10 @@
 import socket
+import ssl
 import json
 import argparse
 import sys
 
-def send_store_group_request(server_ip, server_port, group_name, token, description=""):
+def send_store_group_request(server_ip, server_port, group_name, token, description="", use_ssl=True, accept_self_signed=False):
     """
     Sends a request to store a new group to the MCP server.
 
@@ -12,6 +13,8 @@ def send_store_group_request(server_ip, server_port, group_name, token, descript
     :param group_name: Name of the group to store
     :param description: Description of the group (optional)
     :param token: Authentication token
+    :param use_ssl: Whether to use SSL/TLS for the connection
+    :param accept_self_signed: Whether to accept self-signed certificates
     :return: Response from the server
     """
 
@@ -25,20 +28,46 @@ def send_store_group_request(server_ip, server_port, group_name, token, descript
     }
 
     payload_json = json.dumps(payload)
+    
+    raw_socket = None
+    client_socket = None
 
     try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client_socket:
-            client_socket.connect((server_ip, server_port))
-            client_socket.sendall(payload_json.encode('utf-8'))
-            response = b""
-            while True:
-                part = client_socket.recv(4096)
-                response += part
-                if len(part) < 4096:
-                    break
-            return response.decode('utf-8')
+        raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        raw_socket.settimeout(10)
+
+        if use_ssl:
+            context = ssl.create_default_context()
+            if accept_self_signed:
+                context.check_hostname = False
+                context.verify_mode = ssl.CERT_NONE
+            client_socket = context.wrap_socket(raw_socket, server_hostname=server_ip)
+        else:
+            client_socket = raw_socket
+        
+        client_socket.connect((server_ip, server_port))
+        client_socket.sendall(payload_json.encode('utf-8'))
+
+        response = b""
+        while True:
+            part = client_socket.recv(4096)
+            if not part:
+                break
+            response += part
+
+        return response.decode('utf-8')
+    except ssl.SSLError:
+        return "Error: Server and/or client may require TLS encryption. Please enable SSL/TLS."
     except Exception as e:
         return f"Error: {e}"
+    
+    finally:
+        if client_socket is not None:
+            try:
+                client_socket.shutdown(socket.SHUT_RDWR)
+            except:
+                pass
+            client_socket.close()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -71,6 +100,8 @@ if __name__ == "__main__":
         default="",
         help="Description of the group (optional)\nExample: --description 'This is a test group'"
     )
+    parser.add_argument("--use-ssl", action="store_true", help="Connect using SSL/TLS")
+    parser.add_argument("--accept-self-signed", action="store_true", help="Accept self-signed certificates (disable certificate verification)")
 
     # If no arguments are provided, print help and exit
     if len(sys.argv) == 1:
@@ -84,6 +115,8 @@ if __name__ == "__main__":
         args.server_port,
         args.group_name,
         args.token,
-        args.description
+        args.description,
+        use_ssl=args.use_ssl,
+        accept_self_signed=args.accept_self_signed
     )
     print("Response from server:", response)

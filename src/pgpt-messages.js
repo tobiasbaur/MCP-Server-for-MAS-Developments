@@ -29,6 +29,10 @@ export const prefixMessages = {
         prefix_reactivate_user:             'ReactivateUser',
         prefix_reactivate_userSuccess:      'ReactivateUser: Success',
         prefix_reactivate_userError:        'ReactivateUser: Error',
+        prefix_EnableTLS:                   'ENABLE_TLS',
+        prefix_sslKeyPath:                  'SSL_KEY_PATH',
+        prefix_sslCertPath:                 'SSL_CERT_PATH',
+        prefix_sslError:                    'No certificate found.',
         
 		//##############
 		prefix_All_Funcs: 					'All Funcs',
@@ -1044,6 +1048,8 @@ export const messages = {
 		tokenMissing: 'Token fehlt.'
 	},
     en: {
+        ErrorConnReset: 'Connection terminated prematurely by the client (ECONNRESET).',
+        NoTLSCertFound: 'No SSL certificate or key found. Please create a certificate. For example, you can create a self-signed certificate with OpenSSL:',
         deleteChatsSuccess: "All chat history has been successfully deleted.",
         deleteChatsError: "An error occurred while deleting chat history: ${error}.",
         missingAuthToken: "Authorization token is missing or invalid.",
@@ -1053,6 +1059,10 @@ export const messages = {
         missingChatId: "Chat ID is missing. Please provide a valid chat ID.",
         chatDeleted: "Chat with ID ${chatId} has been successfully deleted.",
         deleteChatError: "An error occurred while deleting chat with ID ${chatId}: ${error}.",
+        missingAuthToken: "Authorization token is missing or invalid.",
+        deleteChatUnauthorized: "You are not authorized to delete this chat.",
+        deleteChatServerIssue: "A server error occurred while processing the request.",
+        deleteChatNotAllowed: "Deleting this chat is not allowed.",
 		toolDisabledLog: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${toolName}' }),
 		toolDisabledError: formatMessage(templates.error, { action: 'Function call disabled server-side:', details: '${toolName}' }),
         emailRequiredForReactivate: "An email address is required to reactivate a user.",
@@ -1066,6 +1076,7 @@ export const messages = {
 		create_sourceUnknownError: 'Unknown error creating source: ${error}',
 		returnStatus: 'Status: ${Status}',
 		extractedToken: 'Extracted Token: ${token}',
+		missingChatId: 'chatId is required to retrieve chat information.',
 		missingQuestion: 'Missing question in the arguments.',
 		ChatInfoRetrieved: 'Chat information retrieved: ${chatData}',
 		InvalidGroups: 'Invalid groups: ${GROUPS}',

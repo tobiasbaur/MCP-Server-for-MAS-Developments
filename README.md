@@ -20,10 +20,10 @@
   - [Flexibility](#flexibility)
 - [**Overview**](#overview)
 - [**Security Features Overview**](#security)
-  - [1. Password Encryption](#1-password-encryption)
-  - [2. Key Management](#2-key-management)
-  - [3. Decryption on the Server](#3-decryption-on-the-server)
-  - [4. Transport Layer Security (TLS)](#4-transport-layer-security-tls)
+  - [1. Transport Layer Security (TLS)](#1-transport-layer-security-(tls))
+  - [2. Password Encryption](#2-password-encryption)
+  - [3. Key Management](#3-key-management)
+  - [4. Decryption on the Server](#4-decryption-on-the-server)
   - [5. Authorization Tokens](#5-authorization-tokens)
   - [6. Restriction of Key Generation (Keygen)](#6-restriction-of-key-generation-keygen)
   - [7. Certificate-Based Access Control (CBAC)](#7-certificate-based-access-control-cbac)
@@ -62,6 +62,7 @@
     - [Language](#language)
     - [SSL Validation](#ssl-validation)
     - [Encryption](#encryption)
+    - [SSL/TLS](#ssltls)
   - [Restrictions](#restrictions)
     - [Group Restrictions](#restrictions)
 	- [Enable OpenAI compatible API](#restrictions)
@@ -131,7 +132,7 @@ This server provides a bridge between MCP clients and the PrivateGPT API, allowi
 
 # Why Agents
 An **agent** in relation to **LLMs** (Large Language Models) and **MCP servers** is a specialized software component that acts as an intermediary between language models and applications. It handles tasks such as processing requests, interacting with the LLM via MCP, managing workflows, ensuring security and efficiency within the overall system, and much more. By utilizing agents, complex AI-based applications can be designed to be effective, secure, and scalable.
-**The code for agents in this repsoitory can be used to implement it into own solutions / applications.**
+**The code for agents in this repository can be used to implement it into own solutions / applications.**
 
 ## Interaction Between Agents, LLMs, and MCP Servers
 The interaction of these components enables the development of powerful, scalable, and secure AI applications. Below is a simplified scenario that illustrates this interaction:
@@ -166,7 +167,37 @@ To mitigate these risks, it is essential to encrypt these passwords and handle o
 # Security
 The following security features are implemented to ensure data protection and secure communication between the client application and server. These features cover encryption, decryption, key management, and transport security.
 
-## 1. Password Encryption
+---
+
+## 1. Transport Layer Security (TLS)
+- To secure communication between the client and server, TLS can be activate. All data transmitted between the client and server is encrypted using TLS (minimum version 1.2).
+
+## Why Should TLS Be Enabled Between Client and Server?
+
+### a. **Encryption of Communication**
+- TLS (Transport Layer Security) ensures that all data transmitted between the client and server is encrypted. This protects sensitive information such as passwords, credit card details, and personal data from eavesdropping attacks (Man-in-the-Middle attacks).
+
+### b. **Data Integrity**
+- TLS guarantees that the transmitted data remains unchanged and unaltered. The integrity check ensures that the received data is exactly as it was sent.
+
+### c. **Authentication**
+- TLS enables secure authentication of the server (and optionally the client) through digital certificates. This prevents users from falling victim to phishing attacks on fake websites.
+
+### d. **Protection Against Man-in-the-Middle Attacks**
+- TLS encrypts the connection, making it nearly impossible for attackers to intercept or manipulate traffic. Without TLS, attackers could capture and modify data packets.
+
+### e. **Compliance with Security Standards and Regulations**
+- Many regulatory requirements (e.g., GDPR, PCI-DSS) mandate secure data transmission. TLS is a fundamental component of these security requirements.
+
+### f. **Prevention of Downgrade and Replay Attacks**
+- TLS protects against attacks that attempt to downgrade a connection to an insecure version (downgrade attacks) or replay previously valid requests (replay attacks).
+
+## Conclusion
+Enabling TLS between client and server is essential to ensure data privacy, security, and communication integrity. It not only protects sensitive information but also helps meet compliance requirements and increases user trust.
+
+---
+
+## 2. Password Encryption
 Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryptography. This ensures that sensitive data, such as user passwords, are never transmitted in plaintext.
 
 ### Method
@@ -182,7 +213,7 @@ Passwords can be encrypted using RSA (Rivest–Shamir–Adleman) public-key cryp
 - **Asymmetric encryption** ensures that only the server can decrypt the password.
 - Even if the communication channel is compromised, encrypted data remains secure.
 
-## 2. Key Management
+## 3. Key Management
 To secure data communication and encryption processes, the following key management principles are followed:
 
 ### Public Key
@@ -202,7 +233,7 @@ To secure data communication and encryption processes, the following key managem
 - Keys can be rotated periodically or upon detection of a security incident. Important: if these are reissued, the clients or AI agents immediately lose access to the MCP server and require a new RSA key (encrypted password)!
 - Old keys are securely invalidated.
 
-## 3. Decryption on the Server
+## 4. Decryption on the Server
 Decryption is exclusively performed on the server using the private key:
 
 ### Process
@@ -213,13 +244,6 @@ Decryption is exclusively performed on the server using the private key:
 ### Secure Handling
 - Decrypted passwords exist in memory only for the duration of processing.
 - Secure memory management practices ensure sensitive data is cleared immediately after use.
-
-## 4. Transport Layer Security (TLS)
-To secure communication between the client and server:
-
-### TLS Encryption
-- All data transmitted between the client and server is encrypted using TLS (minimum version 1.2).
-- Prevents man-in-the-middle (MITM) attacks and eavesdropping.
 
 ### Certificate Validation
 - Certificates are validated on both sides to ensure the authenticity of the server and client.
@@ -232,9 +256,6 @@ Tokens are used to authenticate requests and ensure only authorized users can ac
 - Tokens are generated upon successful login.
 - They are short-lived and automatically expire after a predefined time.
 - Tokens are signed using HMAC or RSA, making them tamper-proof.
-
-### Secure Storage
-- Tokens are stored securely on the client side (e.g., in memory or encrypted storage).
 
 ## 6. Restriction of Key Generation (Keygen)
 To prevent misuse of the system, key generation (`keygen`) is restricted:
@@ -476,6 +497,14 @@ ssh-keygen -f ~/.ssh/id_rsa.pub -e -m PEM > ~/.ssh/id_rsa_public.pem
 After this process, you can create Ciphertext from passwords by using the Encrypted Password Encryption Tool and test the cipher with the Encrypted Password Decryption Tool.
 You will find the descriptionof how it works in the `Security` section of this document.
 
+Next, you should provide the SSL/TLS certificates `server.crt` and `server.key` to ensure that communication with clients and agents is encrypted.
+If you want to use self-signed certificates, you can generate them by executing f.e. the following command:
+```bash
+openssl req -x509 -newkey rsa:2048 -nodes -keyout server.key -out server.crt -days 365 -subj "/CN=localhost"
+```
+
+Note: Clients and agents can detect that the server uses self-signed certificates, as these are potentially insecure compared to official certificates where the organisation is checked and more. However, clients and agents can accept communication with these certificates with the appropriate parameter (see description of the respective client and agent parameters).
+
 ---
 
 Below is a sample `.env` configuration file for the PGPT server, including descriptions for each setting. 
@@ -511,10 +540,18 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 | Key               | Description                                                                          | Example Value                    |
 |-------------------|--------------------------------------------------------------------------------------|----------------------------------|
 | **PW_ENCRYPTION** | If set to `"true"` the server only accepts passwords in Ciphertext.                  | `"false"`                        |
-| **PUBLIC_KEY**    | Specifies the file system path to the server's public PEM file used for SSL/TLS.     | `"~/.ssh/id_rsa_public.pem"`     |
-| **PRIVATE_KEY**   | Specifies the file system path to the server's private key file used for decryption. | `"~/.ssh/id_rsa_public.pem"`     |
+| **PUBLIC_KEY**    | Specifies the file system path to the server's public PEM file used for RSA.         | `"~/.ssh/id_rsa_public.pem"`     |
+| **PRIVATE_KEY**   | Specifies the file system path to the server's private key file used for RSA.        | `"~/.ssh/id_rsa_public.pem"`     |
 
+---
 
+##  `SSL/TLS`
+| Key               | Description                                                                                     | Example Value                    |
+|-------------------|-------------------------------------------------------------------------------------------------|----------------------------------|
+| **ENABLE_TLS**    | If set to `"true"` the server only provides TLS encrypted communication with clients and agents.| `"true"`                         |
+| **SSL_KEY_PATH**  | Specifies the file system path to the server's SSL/TLS Key file used for SSL/TLS.               | `"~/.ssh/certs/server.key"`      |
+| **SSL_CERT_PATH** | Specifies the file system path to the server's certificate used for SSL/TLS.                    | `"~/.ssh/certs/server.crt"`      |
+       
 ---
 
 ## `Restrictions`
@@ -526,11 +563,11 @@ Every Language can be easily added by modifying the `pgpt-messages.js`. This fil
 ---
     
 ## `Logging`
-| Key                 | Description                                                                                                                                                             | Example Value |
-|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| **WRITTEN_LOGFILE** | Enable logfile. If set to `false`, no logfile `logs/server.log` will be written. If this option is set to ‘true’, the log can be retrieved via <ip>:3000 of the server. | `true`        |
-| **LOG_IPs**         | Log IP's of the cleints/agents. If it is set to `false`, this information is replaced by `*****` and cannot be restored.                                                | `false`       |
-| **ANONYMOUS_MODE**  | Deactivate everything that has to do with logging. No communication, errors or similar are written/saved or displayed.                                                  | `false`       |
+| Key                 | Description                                                                                                                                                                      | Example Value |
+|---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------|
+| **WRITTEN_LOGFILE** | Enable logfile. If set to `false`, no logfile `logs/server.log` will be written. If this option is set to ‘true’, the log can be retrieved via `http://<ip>:3000' of the server. | `true`        |
+| **LOG_IPs**         | Log IP's of the cleints/agents. If it is set to `false`, this information is replaced by `*****` and cannot be restored.                                                         | `false`       |
+| **ANONYMOUS_MODE**  | Deactivate everything that has to do with logging. No communication, errors or similar are written/saved or displayed.                                                           | `false`       |
 
 
 ## `Feature Activation/Deactivation`
@@ -584,7 +621,10 @@ Example `.env` entry:
         "PW_ENCRYPTION": "true",
         "ALLOW_KEYGEN": "false",
         "PUBLIC_KEY": "~/.ssh/id_rsa_public.pem",
-        "PRIVATE_KEY": "~/.ssh/id_rsa"
+        "PRIVATE_KEY": "~/.ssh/id_rsa",
+        "ENABLE_TLS": "true",
+        "SSL_KEY_PATH": "~/.ssh/certs/server.key",
+        "SSL_CERT_PATH": "~/.ssh/certs/server.crt"
     },
     "Restrictions": {
         "RESTRICTED_GROUPS": false,
