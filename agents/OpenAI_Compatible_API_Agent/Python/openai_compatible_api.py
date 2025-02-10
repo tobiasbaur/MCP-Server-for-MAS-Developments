@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-from litellm.types.completion import CompletionRequest
 from starlette.responses import StreamingResponse
 
 from fastapi import FastAPI, Request, HTTPException
@@ -95,7 +94,6 @@ async def chat_completions(request: ChatCompletionRequest):
                 "answer": "API Key not valid",
             }
     else:
-        print("yo2")
         response = {
             "chatId": "0",
             "answer": "No Input given",

@@ -58,7 +58,8 @@ class CompletionRequest(BaseModel):
     response_format: Optional[object] = None
     tools: Optional[object] = None
     groups: Optional[object] = None
-    prompt: str = ""
+    prompt: Optional[str] = ""
+    messages: Optional[List[Message]]
 
 
 
