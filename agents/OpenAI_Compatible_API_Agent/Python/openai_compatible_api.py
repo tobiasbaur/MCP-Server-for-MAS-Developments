@@ -116,7 +116,6 @@ async def completions(request: CompletionRequest):
     if request.groups:
         groups = request.groups
     print("Groups: " + str(groups))
-
     if request.prompt:
 
         #otherwise connect via api-key
