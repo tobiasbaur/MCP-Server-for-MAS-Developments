@@ -7,7 +7,7 @@ async function bitcoin(args){
    const apiUrl = 'https://mempool.space/api/v1/prices'
    const json = await fetch(apiUrl)
                 .then(response => response.json());
-    console.log(json);
+    //console.log(json);
     var result = JSON.stringify(json)
     return {
       content: [{ type: "text", text: `${result}` }],

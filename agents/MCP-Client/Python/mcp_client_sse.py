@@ -13,6 +13,7 @@ from mcp.client.sse import sse_client
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from mcpcli.chat_handler import generate_system_prompt
 
 load_dotenv()  # load environment variables from .env
 
@@ -81,13 +82,7 @@ class MCPClient:
         return openai_tools
 
     async def process_query(self, query: str) -> str:
-        """Process a query using Claude and available tools"""
-        messages = [
-            {
-                "role": "user",
-                "content": query
-            }
-        ]
+        """Process a query using PGPT and available tools"""
 
         response = await self.session.list_tools()
         available_tools = [{
@@ -97,8 +92,18 @@ class MCPClient:
         } for tool in response.tools]
 
         tools = self.convert_to_openai_tools(available_tools)
-        # Initial Claude API call
 
+        #system_prompt = generate_system_prompt(tools)
+        messages = []
+
+        messages.append(
+            {
+                "role": "user",
+                "content": query
+            }
+        )
+
+        # Initial PGPT API call
         response = self.client.chat.completions.create(
             model="pgpt-mistral-nemo-12b",
             messages=messages,
@@ -176,7 +181,7 @@ class MCPClient:
                 print("Tool " + tool_name + " reply: " + str(meta.content[0]))
 
 
-                tool_results.append({"call": tool_name, "result": meta.content})
+                tool_results.append({"call": str(tool_name), "result": meta.content})
                 #final_text.append(f"[Calling tool {tool_name} with args {raw_arguments}]")
 
                 messages.append(
@@ -227,7 +232,7 @@ class MCPClient:
 
             return "\n".join(final_text)
 
-        if not tool_calls:
+        else:
             # Kein Tool-Aufruf, also gib die LLM-Antwort direkt zurück
             return message.content or ""
 
@@ -261,7 +266,7 @@ async def main():
 
     args = parser.parse_args()
     server_url = args.server or (
-         "http://172.24.123.123:3001/sse"
+         "http://127.0.0.1:3001/sse"
     )
 
     client = MCPClient()

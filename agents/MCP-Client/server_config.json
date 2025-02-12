@@ -5,18 +5,6 @@
            "args": [
                "dist\\demo-mcp-server\\example-mcp-tools-server.js"
            ]
-       },
-
-     "remote": {
-      "command": "node",
-      "args": [
-        "C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js",
-        "-y",
-        "@remote-mcp/client"
-      ],
-      "env": {
-        "REMOTE_MCP_URL": "http://127.0.0.1:9512"
-      }
-    }
+       }
   }
 }
