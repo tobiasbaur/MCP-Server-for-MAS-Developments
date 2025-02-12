@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
     CallToolRequestSchema,
     ErrorCode,
@@ -1041,280 +1042,6 @@ class PrivateGPTServer {
     }
 
     setupToolHandlers() {
-        this.server.setRequestHandler(ListToolsRequestSchema, async () => ({
-            tools: [
-            {   /* 1.0 Login #####################################################################################*/
-                name: 'login',
-                description: 'User login to retrieve an API token',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        email: {
-                            type: 'string',
-                            description: 'User email address for login'
-                        },
-                        password: {
-                            type: 'string',
-                            description: 'User password for login'
-                        }
-                    },
-                    required: ['email', 'password']
-                }
-            },
-            {   /* 1.1 Logout ####################################################################################*/
-                name: 'logout',
-                description: 'Invalidate the API token',
-                inputSchema: { type: 'object', properties: {} },
-            },
-            {   /* 2.0 Chat ######################################################################################*/
-                name: 'chat',
-                description: 'Start or continue a chat with PrivateGPT with optional RAG capabilities',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        question: { type: 'string', description: 'The question or prompt to send' },
-                        usePublic: { type: 'boolean', description: 'Use public knowledge base', default: false },
-                        groups: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Group names for RAG (exclusive with usePublic)',
-                        },
-                        language: { type: 'string', description: 'Language code (e.g., "en")', default: 'en' },
-                    },
-                    required: ['question'],
-                },
-            },
-            {   /* 2.1 Continue Chat #############################################################################*/
-                name: 'continue_chat',
-                description: 'Continue an existing chat',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        chatId: { type: 'string', description: 'ID of the existing chat to continue' },
-                        question: { type: 'string', description: 'The next question or message in the chat' },
-                    },
-                    required: ['chatId', 'question'],
-                },
-            },
-            {   /* 2.2 Get Chat Info #############################################################################*/
-                name: 'get_chat_info',
-                description: 'Retrieve details about an existing chat using its ID',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        chatId: { type: 'string', description: 'ID of the chat to retrieve details for' },
-                        token: { type: 'string', description: 'Authorization token for API access' },
-                    },
-                    required: ['chatId', 'token'],
-                },
-            },
-            {   /* 3.0 Create Source #############################################################################*/
-                name: 'create_source',
-                description: 'Create a new source with automatic markdown formatting',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        name: { type: 'string', description: 'Name of the source' },
-                        content: { type: 'string', description: 'Markdown-formatted content' },
-                        groups: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Optional groups to assign the source to',
-                        },
-                    },
-                    required: ['name', 'content'],
-                },
-            },
-            {   /* 3.1 Get Source ################################################################################*/
-                name: 'get_source',
-                description: 'Retrieve information about a specific source',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sourceId: { type: 'string', description: 'ID of the source to retrieve' },
-                    },
-                    required: ['sourceId'],
-                },
-            },
-            {   /* 3.2 List Sources ##############################################################################*/
-                name: 'list_sources',
-                description: 'List all sources in a specific group',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        groupName: { type: 'string', description: 'Group name to list sources from' },
-                    },
-                    required: ['groupName'],
-                },
-            },
-            {   /* 3.3 Edit Source ###############################################################################*/
-                name: 'edit_source',
-                description: 'Edit an existing source',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sourceId: {
-                            type: 'string',
-                            description: 'ID of the source to edit'
-                        },
-                        token: {
-                            type: 'string',
-                            description: 'Authorization token for API access'
-                        },
-                        title: {
-                            type: 'string',
-                            description: 'New title for the source (optional)'
-                        },
-                        content: {
-                            type: 'string',
-                            description: 'New markdown-formatted content for the source (optional)'
-                        },
-                        groups: {
-                            type: 'array',
-                            items: {
-                                type: 'string'
-                            },
-                            description: 'Updated group(s) to assign to the source (optional)'
-                        }
-                    },
-                    required: ['sourceId', 'token']
-                }
-            },
-            {   /* 3.4 Delete Source #############################################################################*/
-                name: 'delete_source',
-                description: 'Delete a specific source',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        sourceId: { type: 'string', description: 'ID of the source to delete' },
-                    },
-                    required: ['sourceId'],
-                },
-            },
-            {   /* 4.0 List Groups ###############################################################################*/
-                name: 'list_groups',
-                description: 'Retrieve personal and assignable groups',
-                inputSchema: { type: 'object', properties: {} },
-            },
-            {   /* 4.1 Store Group ###############################################################################*/
-                name: 'store_group',
-                description: 'Create a new group',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        groupName: { type: 'string', description: 'Name of the new group' },
-                        description: { type: 'string', description: 'Description of the new group' },
-                    },
-                    required: ['groupName'],
-                },
-            },
-            {   /* 4.2 Delete Group ##############################################################################*/
-                name: 'delete_group',
-                description: 'Delete an existing group',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        groupName: { type: 'string', description: 'Name of the group to delete' },
-                    },
-                    required: ['groupName'],
-                },
-            },
-            {   /* 5.0 Store User ################################################################################*/
-                name: 'store_user',
-                description: 'Create a new user',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        name: { type: 'string', description: 'Name of the user' },
-                        email: { type: 'string', description: 'Email of the user' },
-                        password: { type: 'string', description: 'Password for the user' },
-                        language: { type: 'string', description: 'Preferred language (optional)', default: 'en' },
-                        timezone: { type: 'string', description: 'Timezone (optional)', default: 'Europe/Berlin' },
-                        roles: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Roles to assign (optional)'
-                        },
-                        groups: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Groups to assign (optional)'
-                        },
-                        usePublic: { type: 'boolean', description: 'Enable public knowledge (optional)', default: false }
-                    },
-                    required: ['name', 'email', 'password']
-                },
-            },
-            {   /* 5.1 Edit User #################################################################################*/
-                name: 'edit_user',
-                description: 'Edit an existing user',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        email: { type: 'string', description: 'Email of the user to edit' },
-                        name: { type: 'string', description: 'New name for the user (optional)' },
-                        password: { type: 'string', description: 'New password for the user (optional)' },
-                        language: { type: 'string', description: 'Preferred language (optional)' },
-                        timezone: { type: 'string', description: 'Timezone (optional)' },
-                        roles: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Updated roles (optional)'
-                        },
-                        groups: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Updated groups (optional)'
-                        },
-                        usePublic: { type: 'boolean', description: 'Enable public knowledge (optional)' }
-                    },
-                    required: ['email']
-                }
-            },
-            {   /* 5.2 Delete User ###############################################################################*/
-                name: 'delete_user',
-                description: 'Delete an existing user',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        email: { type: 'string', description: 'Email of the user to delete' }
-                    },
-                    required: ['email']
-                }
-            },
-			{   /* 6.0 pen AI compatible API Chat ######################################################################################*/
-                name: 'oai_comp_api_chat',
-                description: 'Start or continue a chat with PrivateGPT with optional RAG capabilities',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        question: { type: 'string', description: 'The question or prompt to send' },
-                        usePublic: { type: 'boolean', description: 'Use public knowledge base', default: false },
-                        groups: {
-                            type: 'array',
-                            items: { type: 'string' },
-                            description: 'Group names for RAG (exclusive with usePublic)',
-                        },
-                        language: { type: 'string', description: 'Language code (e.g., "en")', default: 'en' },
-                    },
-                    required: ['question'],
-                },
-            },
-            {   /* 6.1 Open AI compatible API Continue Chat #############################################################################*/
-                name: 'oai_comp_api_continue_chat',
-                description: 'Continue an existing chat',
-                inputSchema: {
-                    type: 'object',
-                    properties: {
-                        chatId: { type: 'string', description: 'ID of the existing chat to continue' },
-                        question: { type: 'string', description: 'The next question or message in the chat' },
-                    },
-                    required: ['chatId', 'question'],
-                },
-            }
-        ],
-    }));
-
         this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
             if (!request.params?.name) {
                 throw new McpError(
@@ -3842,6 +3569,96 @@ httpServer.listen(WEB_PORT, () => {
         'info'
     );
 });
+
+// Im Code ganz unten nach const app = express(); hinzufügen:
+app.get('/listToolsSSE', async (req, res) => {
+    // HTTP-Header für SSE
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+
+    try {
+        // Hier packen wir unsere Werkzeuge in eine JSON-RPC-konforme "Hülle":
+        const rpcResponse = {
+            jsonrpc: "2.0",
+            id: "listToolsSSE",
+            result: {
+                tools: [
+                    {
+                        name: "login",
+                        description: "User login to retrieve an API token",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                email: {
+                                    type: "string",
+                                    description: "User email address for login"
+                                },
+                                password: {
+                                    type: "string",
+                                    description: "User password for login"
+                                }
+                            },
+                            required: ["email", "password"]
+                        }
+                    },
+                    {
+                        name: "logout",
+                        description: "Invalidate the API token",
+                        inputSchema: {
+                            type: "object",
+                            properties: {}
+                        }
+                    },
+                    {
+                        name: "chat",
+                        description: "Start or continue a chat with PrivateGPT with optional RAG capabilities",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                question: { type: "string", description: "The question or prompt to send" },
+                                usePublic: { type: "boolean", description: "Use public knowledge base", default: false },
+                                groups: {
+                                    type: "array",
+                                    items: { type: "string" },
+                                    description: "Group names for RAG (exclusive with usePublic)",
+                                },
+                                language: { type: "string", description: "Language code (e.g., \"en\")", default: "en" },
+                            },
+                            required: ["question"],
+                        }
+                    },
+                    // ... Restliche Tools hier ...
+                    {
+                        name: "delete_user",
+                        description: "Delete an existing user",
+                        inputSchema: {
+                            type: "object",
+                            properties: {
+                                email: {
+                                    type: "string",
+                                    description: "Email of the user to delete"
+                                }
+                            },
+                            required: ["email"]
+                        }
+                    }
+                ]
+            }
+        };
+
+        // Damit der Client ein SSE-Event bekommt, müssen wir es mit data: ... und zwei Zeilenumbrüchen senden:
+        const jsonData = JSON.stringify(rpcResponse);
+        res.write(`data: ${jsonData}\n\n`);
+
+        // Bei Bedarf kannst Du den Stream offen lassen oder beenden:
+        res.end();
+    } catch (err) {
+        console.error('Fehler beim Senden via SSE:', err);
+        res.end();
+    }
+});
+
 
 // Server läuft
 server.run().catch(error => {
