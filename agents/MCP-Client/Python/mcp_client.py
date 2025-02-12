@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import List
 
 import anyio
-
 # Rich imports
 from rich import print
 from rich.markdown import Markdown
@@ -35,7 +34,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s",
     stream=sys.stderr,
 )
-
 
 def signal_handler(sig, frame):
     # Ignore subsequent SIGINT signals
@@ -218,7 +216,7 @@ async def handle_command(command: str, server_streams: List[tuple]) -> bool:
 
         elif command == "help":
             help_md = print_help()
-            print(Panel(Markdown(help_md), style="yellow"))
+            print(Panel(help_md))
 
         else:
             print(f"[red]\nUnknown command: {command}[/red]")

@@ -96,7 +96,8 @@ async def handle_tool_call(tool_call, conversation_history, server_streams):
         # Format the tool response
         formatted_response = format_tool_response(tool_response.get("content", []))
         logging.debug(f"Tool '{tool_name}' Response: {formatted_response}")
-        print(f"Tool '{tool_name}' Response: {formatted_response}")
+        if formatted_response == "":
+            print(f"Warning Tool '{tool_name}' Response: {formatted_response}")
 
         # Update the conversation history with the tool call
         # Add the tool call itself (for OpenAI tracking)

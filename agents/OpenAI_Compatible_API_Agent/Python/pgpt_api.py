@@ -112,15 +112,23 @@ class PrivateGPTAPI:
         try:
             response = self.session.patch(url, json=payload)
             #response.raise_for_status()
-            data = response.json()
-            answer = data.get('data', {}).get('answer', "error")
+            resp = response.json()
+            try:
+                answer = resp.get('data', None).get('answer', "error")
+            except:
+                print(response.json())
+                resp = {"data" :
+                        {"answer": "error"}
+                        }
+                answer = "error"
+
             if answer.startswith("{\"role\":"):
                  answerj = json.loads(answer)
-                 data["data"]["answer"] = answerj["content"]
-                 data["data"]["chatId"] = "0"
+                 resp["data"]["answer"] = answerj["content"]
+                 resp["data"]["chatId"] = "0"
 
             print(f"💡 Response: {answer}")
-            return data
+            return resp
         except requests.exceptions.RequestException as e:
             # It seems we get disconnections from time to time..
             #print(f"⚠️ Failed to get response on first try, trying again..: {e}")
@@ -232,10 +240,8 @@ def add_response_format(response_format):
 
 
 def add_tools(response_tools, last_tool_message):
-    #if last_tool_message is not None:
-    #    prompt = "\nDescribe what you are doing with the tool to generate the answer."
-    #else:
-    prompt = "\nPlease select the fitting provided tool to create your answer. Only return the generated result of the tool.\n"
+
+    prompt = "\nPlease select the fitting provided tool to create your answer. Only return the generated result of the tool. Do not describe what you are doing, just return the json.\n"
     index = 1
     for tool in response_tools:
         prompt += "\n" + json.dumps(tool) + "\n"
@@ -245,7 +251,7 @@ def add_tools(response_tools, last_tool_message):
 
 def clean_response(response):
     # Remove artefacts from reply here
-    response = response.replace("[TOOL_CALLS] ", "")
+    response = response.replace("[TOOL_CALLS]", "")
     return response
 
 def decrypt_api_key(api_key):
