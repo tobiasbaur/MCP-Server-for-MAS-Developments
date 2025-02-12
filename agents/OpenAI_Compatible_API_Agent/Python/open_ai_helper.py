@@ -20,14 +20,14 @@ class ChatInstance:
 # data models
 class Message(BaseModel):
     role: str
-    content: str | None
+    content: str | dict | None
     tool_calls: Optional[object] = None
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
 
 
 class Function(BaseModel):
-    arguments: str
+    arguments: str | dict
     name: str
     parsed_arguments: Optional[object] = None
 
@@ -58,8 +58,9 @@ class CompletionRequest(BaseModel):
     response_format: Optional[object] = None
     tools: Optional[object] = None
     groups: Optional[object] = None
-    prompt: Optional[str] = ""
-    messages: Optional[List[Message]]
+    prompt: str = ""
+    messages: Optional[List[Message]] = None
+
 
 
 
@@ -95,23 +96,29 @@ def _resp_sync(response: json, request):
             if "arguments" in tool:
                 arguments = tool["arguments"] #  '{"operation":"multiply","a":"123","b":"4324"}'
                 parsed_arguments = json.loads(json.dumps(arguments).strip("\""))
+                print("found arguments")
+                print(parsed_arguments)
+            elif "params" in tool:
+                parsed_arguments =  json.loads(json.dumps(tool["params"]).strip("\""))
+                print("found params")
                 print(parsed_arguments)
             else:
-
-                print(tool)
-
                 try:
-                    parsed_arguments = json.loads(tool)
+                    parsed_arguments = tool["params"]
                 except:
-                    parsed_arguments = tool
-
+                    try:
+                        parsed_arguments = json.loads(tool)
+                    except:
+                        parsed_arguments = tool
             name = "tool"
             if "name" in tool:
                 name = tool["name"] #'calculator'
+            if "method" in tool:
+                name = tool["method"] #'calculator'
 
             function = Function(arguments=json.dumps(parsed_arguments), name=name, parsed_arguments=parsed_arguments)
             tool_call = ChatCompletionMessageToolCall(id=response["chatId"], function=function, type="function")
-
+            print("Tool Call: " + str(tool_call))
             if tool_calls is None:
                 tool_calls = []
             tool_calls.append(tool_call)
@@ -138,6 +145,8 @@ def _resp_sync(response: json, request):
 def clean_response(response):
     # Remove artefacts from reply here
     response = response.replace("[TOOL_CALLS] ", "")
+    if "```json" in response:
+        response = response.replace("'''json", "").replace("'''", "")
     return response
 
 async def _resp_async_generator(response: json, request):

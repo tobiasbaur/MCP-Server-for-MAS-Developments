@@ -80,7 +80,8 @@ if __name__ == "__main__":
             openai.pydantic_function_tool(Query),
         ],
         extra_body={
-            "groups": []
+            "groups": [],
+            "newSession": True
         }
     )
 
