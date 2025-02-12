@@ -57,7 +57,8 @@ if __name__ == "__main__":
         stream=stream,
         response_format=character_schema,
         extra_body={
-            "groups": []
+            "groups": [],
+            "newSession": True
         }
     )
 

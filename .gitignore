@@ -26,3 +26,5 @@ agents/SourceManagerAgent/database/documents.sql
 /tests/mcp-cli/undefined/
 /agents/MCP-Client/undefined/
 agents/MCP-Client/.env
+agents/MCP-Client/test_prompts.txt
+agents/OpenAI_Compatible_API_Agent/Python/vllm_client.py
