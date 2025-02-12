@@ -6,13 +6,13 @@ import uuid
 from typing import Optional
 from contextlib import AsyncExitStack
 
-from markdown import Markdown
+
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 
 from dotenv import load_dotenv
 from openai import OpenAI
-from rich.panel import Panel
+
 
 load_dotenv()  # load environment variables from .env
 
@@ -227,7 +227,9 @@ class MCPClient:
 
             return "\n".join(final_text)
 
-
+        if not tool_calls:
+            # Kein Tool-Aufruf, also gib die LLM-Antwort direkt zurück
+            return message.content or ""
 
 
     async def chat_loop(self):
@@ -259,7 +261,7 @@ async def main():
 
     args = parser.parse_args()
     server_url = args.server or (
-         "http://127.0.0.1:3001/sse"
+         "http://172.24.123.123:3001/sse"
     )
 
     client = MCPClient()
