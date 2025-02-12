@@ -145,6 +145,8 @@ def _resp_sync(response: json, request):
 def clean_response(response):
     # Remove artefacts from reply here
     response = response.replace("[TOOL_CALLS] ", "")
+    if "```json" in response:
+        response = response.replace("'''json", "").replace("'''", "")
     return response
 
 async def _resp_async_generator(response: json, request):
