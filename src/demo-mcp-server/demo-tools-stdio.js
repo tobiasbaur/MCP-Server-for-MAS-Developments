@@ -1,8 +1,6 @@
-import { MCPRouter, LogLevel } from "@remote-mcp/server";
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-//import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { z } from "zod";
 
 //Import functions from tools folder
@@ -11,7 +9,7 @@ import {weather} from "./tools/weather.js"
 import {bitcoin, gold} from "./tools/assets.js"
 
 //Basic config
-const name = "tools-demo-server"
+const name = "demo-tools-stdio"
 const version = "0.0.1"
 
 const config = {
@@ -25,8 +23,7 @@ const config = {
 
 // Create an MCP server for Stdio
 const server = new McpServer(config);
-// Create router instance for external connection with remote (replace this later with sse ideally)
-const mcpRouter = new MCPRouter(config);
+
 
 // Add any tool and its paramters / function by calling add_tool
 await add_tool("calculator",
@@ -41,22 +38,17 @@ await add_tool("get_weather",
 
 await add_tool("get_gold_price",
          "Get the current price of Gold. Invoke this every time the user asks for the price of Gold",
-        {name: z.string()},
+        {},
          gold)
 
 await add_tool("get_bitcoin_price",
          "Get the current price of Bitcoin. Invoke this every time the user asks for the price of Bitcoin",
-        {name: z.string()},
+        {},
          bitcoin)
 
 async function add_tool(name, description, schema, func){
 // Add tool will add the tool to both, local and remote access systems
     server.tool(name, description, schema,
-        async (args) => {
-            return await func(args)
-        });
-    // This library puts another object in the inputSchema
-    mcpRouter.addTool(name, {description: description, schema: z.object(schema)},
         async (args) => {
             return await func(args)
         });
@@ -67,14 +59,6 @@ async function add_tool(name, description, schema, func){
 // Connect stdio
 const transport = new StdioServerTransport();
 await server.connect(transport);
-
-
-// Remote Server
-const appRouter = mcpRouter.createTRPCRouter();
-void createHTTPServer({
-  router: appRouter,
-  createContext: () => ({}),
-}).listen(9512);
 
 //SSE
 /*const app = express();

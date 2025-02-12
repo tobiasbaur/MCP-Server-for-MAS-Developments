@@ -4,11 +4,11 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 //The actual tool function
 async function bitcoin(args){
 
-   const apiUrl = 'https://api.coindesk.com/v1/bpi/currentprice/USD.json'
+   const apiUrl = 'https://mempool.space/api/v1/prices'
    const json = await fetch(apiUrl)
                 .then(response => response.json());
-   //console.log(json);
-    var result = json.bpi.USD.rate + " " +  json.bpi.USD.code
+    console.log(json);
+    var result = JSON.stringify(json)
     return {
       content: [{ type: "text", text: `${result}` }],
     };
