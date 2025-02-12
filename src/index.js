@@ -586,7 +586,7 @@ export class TcpServerTransport {
         this.enableSSL = enableSSL; // Flag, ob SSL/TLS verwendet werden soll
   
     
-        if (!fs.existsSync(sslKeyPath) || !fs.existsSync(sslCertPath)) {
+        if (this.enableSSL && (!fs.existsSync(sslKeyPath) || !fs.existsSync(sslCertPath))) {
             logEvent('system', 'TLS', l.prefix_sslError, t.NoTLSCertFound, 'error');
             process.exit(1);
         }
