@@ -160,11 +160,15 @@ class PrivateGPTAPI:
 
     def respond_with_context(self, messages, response_format=None, request_tools=None):
         last_user_message = next((p for p in reversed(messages) if p.role == "user"), None)
-        user_input = last_user_message.content
+        user_input = ""
+
 
         for message in messages:
             if message.role == "system":
-                user_input = str(message)
+                user_input = str(message) + "\n"
+
+        if last_user_message is not None:
+            user_input += last_user_message.content
 
         last_assistant_message = next((p for p in reversed(messages) if p.role == "assistant"), None)
         last_tool_message = next((p for p in reversed(messages) if p.role == "tool"), None)
@@ -173,19 +177,6 @@ class PrivateGPTAPI:
         if last_tool_message is not None and last_assistant_message is not None and last_assistant_message.tool_calls is not None and len(last_assistant_message.tool_calls) > 0:
             user_input += "you called the tool: " + str(last_assistant_message.tool_calls[0]) + ". The result was: " + last_tool_message.content
             hastoolresult = True
-
-
-
-        #Check if the latest message was a tool command.
-        #add_tool_call_reply = True
-        #if messages[len(messages) - 1].role == "tool":
-        #    add_tool_call_reply = False
-
-
-        last_user_message = next((p for p in reversed(messages) if p.role == "user"), None)
-        #print(last_user_message)
-        if last_user_message.content is not None:
-            user_input += " " + str(last_user_message)
 
 
         print(f"💁 Request: " + user_input)

@@ -4,7 +4,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 
 import { z } from "zod";
 
-import {calculator} from "./tools/calculator.js"
+import {calculator_sse} from "./tools/calculator.js"
 import {weather} from "./tools/weather.js"
 import {bitcoin, gold} from "./tools/assets.js"
 
@@ -18,8 +18,8 @@ const server = new McpServer({
 
 await add_tool("calculator",
          "Perform basic calculations. Add, subtract, multiply, divide. Invoke this tool every time you need to perform a calculation.",
-         {operation: z.enum(["add", "subtract", "multiply", "divide"]), a: z.string(), b: z.string()},
-         calculator)
+         {expression: z.string()},
+         calculator_sse)
 
 await add_tool("get_weather",
          "Fetch the current weather for a specific location. Invoke this tool every time you need to give information on the weather.",

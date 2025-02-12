@@ -124,7 +124,7 @@ def _resp_sync(response: json, request):
             tool_calls.append(tool_call)
 
         except Exception as e:
-            print("Tool Call error" + str(e))
+            print("Tool Call error: " + str(e))
 
            
     return {
