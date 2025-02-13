@@ -132,8 +132,7 @@ const Port                  = getEnvVar('PORT', ['Server_Config', 'PORT'], '5000
 const restrictedGroups      = getEnvVar('RESTRICTED_GROUPS', ['Restrictions', 'RESTRICTED_GROUPS'], 'false').toString();
 const OpenAICompAPI         = getEnvVar('ENABLE_OPEN_AI_COMP_API', ['Restrictions', 'ENABLE_OPEN_AI_COMP_API'], 'false').toString();
 const sslValidate           = getEnvVar('SSL_VALIDATE', ['Server_Config', 'SSL_VALIDATE'], 'false').toString();
-const enableSSL             = getEnvVar('ENABLE_TLS', ['Server_Config', 'ENABLE_TLS'], 'false').toLowerCase() === 'true';
-// const EnableTLS             = getEnvVar('ENABLE_TLS', ['Server_Config', 'ENABLE_TLS'], 'false').toString();
+const enableTLS             = getEnvVar('ENABLE_TLS', ['Server_Config', 'ENABLE_TLS'], 'false').toLowerCase() === 'true';
 const PwEncryption          = getEnvVar('PW_ENCRYPTION', ['Server_Config', 'PW_ENCRYPTION'], 'false') === 'true';
 const AllowKeygen           = getEnvVar('ALLOW_KEYGEN', ['Server_Config', 'ALLOW_KEYGEN'], 'false') === 'true';
 const allowWrittenLogfile   = getEnvVar('WRITTEN_LOGFILE', ['Logging', 'WRITTEN_LOGFILE'], 'false').toString();
@@ -302,7 +301,7 @@ logEvent('system', 'conf', l.prefix_Public_API_URL, apiUrl, 'info');
 logEvent('system', 'conf', l.prefix_Port, Port, 'info');
 logEvent('system', 'conf', l.prefix_Language, requestedLang, 'info');
 logEvent('system', 'conf', l.prefix_SSL_Validation, sslValidate, 'info');
-logEvent('system', 'conf', l.prefix_EnableTLS, enableSSL, 'info');
+logEvent('system', 'conf', l.prefix_EnableTLS, enableTLS, 'info');
 logEvent('system', 'conf', l.prefix_sslKeyPath, sslKeyPath, 'info');
 logEvent('system', 'conf', l.prefix_sslCertPath, sslCertPath, 'info');
 logEvent('system', 'conf', l.prefix_PW_Encryption, PwEncryption ? t.encryptionEnabled : t.encryptionDisabled, 'info');
@@ -575,24 +574,24 @@ export class TcpServerTransport {
     /**
      * Konstruktor
      * @param {number} port - Port, auf dem der Server lauschen soll.
-     * @param {boolean} enableSSL - true, wenn SSL/TLS verwendet werden soll, ansonsten false.
-     * @param {string} sslKeyPath - Pfad zur SSL-Schlüsseldatei (nur benötigt, wenn enableSSL true ist).
-     * @param {string} sslCertPath - Pfad zur SSL-Zertifikatsdatei (nur benötigt, wenn enableSSL true ist).
+     * @param {boolean} enableTLS - true, wenn SSL/TLS verwendet werden soll, ansonsten false.
+     * @param {string} sslKeyPath - Pfad zur SSL-Schlüsseldatei (nur benötigt, wenn enableTLS true ist).
+     * @param {string} sslCertPath - Pfad zur SSL-Zertifikatsdatei (nur benötigt, wenn enableTLS true ist).
     */
-    constructor(port, enableSSL, sslKeyPath, sslCertPath) {
+    constructor(port, enableTLS, sslKeyPath, sslCertPath) {
         this.port = port;
         this.server = null;
         this.clients = new Map(); // Map zur Speicherung der Clients
-        this.enableSSL = enableSSL; // Flag, ob SSL/TLS verwendet werden soll
+        this.enableTLS = enableTLS; // Flag, ob SSL/TLS verwendet werden soll
   
     
-        if (this.enableSSL && (!fs.existsSync(sslKeyPath) || !fs.existsSync(sslCertPath))) {
+        if (this.enableTLS && (!fs.existsSync(sslKeyPath) || !fs.existsSync(sslCertPath))) {
             logEvent('system', 'TLS', l.prefix_sslError, t.NoTLSCertFound, 'error');
             process.exit(1);
         }
       // 
         // Falls SSL aktiviert ist, laden wir die TLS-Optionen (Schlüssel und Zertifikat)
-        if (this.enableSSL) {
+        if (this.enableTLS) {
             this.tlsOptions = {
                 key: fs.readFileSync(sslKeyPath),
                 cert: fs.readFileSync(sslCertPath)
@@ -610,8 +609,8 @@ export class TcpServerTransport {
      */
     async start(onMessage) {
         return new Promise((resolve, reject) => {
-            // Entscheide anhand des enableSSL-Flags, ob ein TLS/SSL-Server oder ein normaler TCP-Server gestartet wird.
-            if (this.enableSSL) {
+            // Entscheide anhand des enableTLS-Flags, ob ein TLS/SSL-Server oder ein normaler TCP-Server gestartet wird.
+            if (this.enableTLS) {
                 this.server = tls.createServer(this.tlsOptions, (socket) => {
                     this.handleConnection(socket, onMessage);
                 });
@@ -631,7 +630,7 @@ export class TcpServerTransport {
       
             // Server starten
             this.server.listen(this.port, () => {
-                const modus = this.enableSSL ? 'TLS/SSL' : 'Plain TCP';
+                const modus = this.enableTLS ? 'TLS/SSL' : 'Plain TCP';
                 if (!isanonymousModeEnabled) {
                     logEvent('server', this.port, 'Server Start', `Server lauscht auf Port ${this.port} [${modus}]`, 'info');
                 }
@@ -2507,7 +2506,7 @@ async run() {
         throw new Error(t.portInUse.replace('${PORT}', PORT));
     }
 
-    const transport = new TcpServerTransport(PORT, enableSSL, sslKeyPath, sslCertPath);
+    const transport = new TcpServerTransport(PORT, enableTLS, sslKeyPath, sslCertPath);
     await transport.start(async (message) => {
         try {
             // if (!isanonymousModeEnabled) logEvent('client', 'swmsg', 'Incoming Message', `Nachricht empfangen: ${JSON.stringify(message)}`, 'info');
