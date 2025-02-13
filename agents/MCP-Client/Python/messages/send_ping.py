@@ -1,7 +1,7 @@
 # messages/send_ping.py
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
-from mcpcli.messages.send_message import send_message
-from mcpcli.messages.message_types.ping_message import PingMessage
+from .send_message import send_message
+from .message_types.ping_message import PingMessage
 
 async def send_ping(
     read_stream: MemoryObjectReceiveStream,

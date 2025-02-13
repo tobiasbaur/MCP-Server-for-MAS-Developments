@@ -15,7 +15,6 @@ const version = "0.0.1"
 const config = {
   name: name,
   version: version,
-  logLevel: LogLevel.DEBUG,
   capabilities: {
     logging: {},
   },
