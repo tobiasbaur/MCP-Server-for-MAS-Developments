@@ -2,7 +2,7 @@
 import logging
 import anyio
 from anyio.streams.memory import MemoryObjectReceiveStream, MemoryObjectSendStream
-from mcpcli.messages.message_types.json_rpc_message import JSONRPCMessage
+from .message_types.json_rpc_message import JSONRPCMessage
 
 async def send_message(
     read_stream: MemoryObjectReceiveStream,
