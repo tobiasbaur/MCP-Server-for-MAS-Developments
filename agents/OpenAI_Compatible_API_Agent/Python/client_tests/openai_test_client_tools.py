@@ -1,4 +1,5 @@
 import argparse
+import json
 from enum import Enum
 from typing import Union
 
@@ -85,8 +86,8 @@ if __name__ == "__main__":
         }
     )
 
-try:
-    results = json.loads(completion.choices[0].message.content)
-    print(json.dumps(results, indent=2))
-except:
-    print(completion.choices[0].message.content)
+    try:
+        results = json.loads(completion.choices[0].message.content)
+        print(json.dumps(results, indent=2))
+    except:
+        print(completion.choices[0].message.content)
