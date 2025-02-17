@@ -85,5 +85,8 @@ if __name__ == "__main__":
         }
     )
 
-   # print(completion.choices[0].message.tool_calls[0].function.arguments)
+try:
+    results = json.loads(completion.choices[0].message.content)
+    print(json.dumps(results, indent=2))
+except:
     print(completion.choices[0].message.content)

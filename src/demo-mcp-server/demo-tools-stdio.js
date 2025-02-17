@@ -37,12 +37,12 @@ await add_tool("get_weather",
 
 await add_tool("get_gold_price",
          "Get the current price of Gold. Invoke this every time the user asks for the price of Gold",
-        {},
+        {name: z.string()},
          gold)
 
 await add_tool("get_bitcoin_price",
          "Get the current price of Bitcoin. Invoke this every time the user asks for the price of Bitcoin",
-        {},
+        {name: z.string()},
          bitcoin)
 
 async function add_tool(name, description, schema, func){

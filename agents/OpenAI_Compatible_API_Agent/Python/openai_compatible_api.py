@@ -38,10 +38,7 @@ async def store_request_headers(request: Request, call_next):
 @app.post("/chat/completions")
 async def chat_completions(request: ChatCompletionRequest):
     headers = getattr(request_context, "headers", {})
-    try:
-        client_api_key = str(headers['authorization']).split(" ")[1]
-    except:
-           client_api_key = "dG9iaWFzLmJhdXJAZnVqaXRzdS5jb206TmV3YmF1cjMwJSY="
+    client_api_key = str(headers['authorization']).split(" ")[1]
     groups = default_groups
     force_new_session = False
 
@@ -64,11 +61,11 @@ async def chat_completions(request: ChatCompletionRequest):
             if instances[index].agent.chosen_groups != groups:
                 print("⚠️ New Groups requested, switching to new Chat..")
                 config.set_value("groups", groups)
-                instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
+                instances[index].agent.chat_id = None
             elif force_new_session:
                 print("⚠️ New Session Requested, switching to new Chat..")
                 config.set_value("groups", groups)
-                instances[index].agent = PrivateGPTAPI(config, client_api_key=client_api_key)
+                instances[index].agent.chat_id = None
 
             pgpt = instances[index].agent
 
@@ -82,12 +79,11 @@ async def chat_completions(request: ChatCompletionRequest):
 
         if pgpt.logged_in:
             response = pgpt.respond_with_context(request.messages, request.response_format, request.tools)
-
-            if "answer" not in response:
-                response["answer"] = "No Response received"
-            if "answer" in response and response["answer"] == "error":
-                if pgpt.login():
-                    pgpt.create_chat()
+            if response is not None:
+                if "answer" not in response:
+                    response["answer"] = "No Response received"
+            if response is None or ("answer" in response and response["answer"] == "error"):
+                   pgpt.login()
         else:
             response = {
                 "chatId": "0",
