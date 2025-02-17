@@ -60,8 +60,7 @@ class PrivateGPTAPI:
 
         self.session = initialize_session(self.proxy_user, self.proxy_password, self.access_header)
         if self.login():
-            if self.create_chat():
-                self.logged_in = True
+            self.logged_in = True
 
 
     def login(self):
@@ -80,27 +79,62 @@ class PrivateGPTAPI:
                 self.session.headers['Authorization'] += f', Bearer {self.token}'
             else:
                 self.session.headers['Authorization'] = f'Bearer {self.token}'
-            
+            self.chat_id = None
             print("✅ Login successful.")
             return True
         except requests.exceptions.RequestException as e:
             print(f"❌ Login failed: {e}")
         return False
 
-    def create_chat(self):
-        """Start a new chat session."""
+    def create_chat(self, user_input):
+        """Start a new chat session.
+
+        This method sends a POST request to the '/chats' endpoint with the provided parameters.
+        It initializes a new chat session and stores the chat ID for future use.
+        """
         url = f"{self.base_url}/chats"
-        payload = {"language": self.language, "question": "Hello", "usePublic": self.use_public, "groups": self.chosen_groups}
+        payload = {
+            "language": self.language,
+            "question": user_input,  # Initial question to start the chat
+            "usePublic": self.use_public,
+            "groups": self.chosen_groups
+        }
         try:
             response = self.session.post(url, json=payload)
-            response.raise_for_status()
+            response.raise_for_status()  # Raise an exception if the response was not successful
             data = response.json()
-            self.chat_id = data['data']['chatId']
+            self.chat_id = data['data']['chatId']  # Store the chat ID for future use
             print("✅ Chat initialized.")
-            return True
+            resp = response.json()
+            try:
+                answer = resp.get('data', None).get('answer', "error")
+            except:
+                print(response.json())
+                resp = {"data":
+                            {"answer": "error"}
+                        }
+                answer = "error"
+
+            if answer.startswith("{\"role\":"):
+                answerj = json.loads(answer)
+                resp["data"]["answer"] = answerj["content"]
+                resp["data"]["chatId"] = "0"
+
+            print(f"💡 Response: {answer}")
+            return resp
         except requests.exceptions.RequestException as e:
-            print(f"❌ Failed to create chat: {e}")
-            return False
+            # It seems we get disconnections from time to time..
+            # print(f"⚠️ Failed to get response on first try, trying again..: {e}")
+            try:
+                response = self.session.patch(url, json=payload)
+                response.raise_for_status()
+                data = response.json()
+                answer = data.get('data', {}).get('answer', "No answer provided.")
+                print(f"💡 Response: {answer}")
+                return data
+            except:
+                print(f"❌ Failed to get response: {e}")
+                return {"error": f"❌ Failed to get response: {e}"}
 
     def query_private_gpt(self, user_input) -> json:
         """Send a question to the chat and retrieve the response."""
@@ -175,7 +209,7 @@ class PrivateGPTAPI:
 
         hastoolresult = False
         if last_tool_message is not None and last_assistant_message is not None and last_assistant_message.tool_calls is not None and len(last_assistant_message.tool_calls) > 0:
-            user_input += "you called the tool: " + str(last_assistant_message.tool_calls[0]) + ". The result was: " + last_tool_message.content
+            user_input += "\nYou called the tool: " + str(last_assistant_message.tool_calls[0]) + ". The result was: " + last_tool_message.content
             hastoolresult = True
 
 
@@ -196,25 +230,34 @@ class PrivateGPTAPI:
         if request_tools is not None and not hastoolresult:
             user_input += add_tools(request_tools, last_tool_message)
 
-        result = self.query_private_gpt(user_input)
+        if not self.logged_in:
+            self.login()
+        else:
+            if self.chat_id is None:
+                result = self.create_chat(user_input)
+            else:
+                result = self.query_private_gpt(user_input)
 
-        if 'data' in result:
-            response_data = result.get("data")
-            if request_tools is not None and not hastoolresult and is_json(clean_response(response_data.get("answer"))):
-                response_data["tool_call"] = clean_response(response_data.get("answer", ""))
-            return response_data
-        elif 'error' in result:
-            # Try to login again and send the query once more on error.
-            if self.login():
-                if self.create_chat():
-                    result = self.query_private_gpt(user_input)
+            if 'data' in result:
+                response_data = result.get("data")
+                if request_tools is not None and not hastoolresult and is_json(clean_response(response_data.get("answer"))):
+                    response_data["tool_call"] = clean_response(response_data.get("answer", ""))
+                return response_data
+            elif 'error' in result:
+                # Try to login again and send the query once more on error.
+                if self.login():
+                    if self.chat_id is None:
+                        result = self.create_chat(user_input)
+                    else:
+                        result = self.query_private_gpt(user_input)
+
                     if 'data' in result:
                         return result['data']
                     else:
                         return result
 
-        else:
-            return result
+            else:
+                return result
 
 def is_json(myjson):
   try:

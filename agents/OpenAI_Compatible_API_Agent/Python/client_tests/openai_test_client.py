@@ -10,7 +10,6 @@ if __name__ == "__main__":
     parser.add_argument("--api_key", required=True, help="API key for login")
     args = parser.parse_args()
 
-
     # init client and connect to localhost server
     client = OpenAI(
         api_key=args.api_key,
