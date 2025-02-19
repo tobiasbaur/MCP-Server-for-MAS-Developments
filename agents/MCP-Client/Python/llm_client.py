@@ -35,7 +35,6 @@ class LLMClient:
 
     def _pgpt_completion(self, messages: List[Dict], tools: List) -> Dict[str, Any]:
         vllm = os.getenv("USE_VLLM", "False")
-        print(vllm)
 
         try:
             if vllm == "True":
@@ -95,7 +94,10 @@ class LLMClient:
             logging.info(f"PGPT raw response: {response}")
 
             # Extract the message and tool calls
-            message = response.choices[0].message
+            try:
+                message = response.choices[0].message
+            except:
+                message = response
             tool_calls = []
 
             # Convert Ollama tool calls to OpenAI format
