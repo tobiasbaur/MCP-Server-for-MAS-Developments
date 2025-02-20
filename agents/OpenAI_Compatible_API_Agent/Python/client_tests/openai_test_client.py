@@ -16,7 +16,7 @@ if __name__ == "__main__":
         base_url="http://127.0.0.1:8001"  # change the default port if needed
     )
 
-    stream = True
+    stream = False
     try:
         chat_completion = client.chat.completions.create(
             model="pgpt",

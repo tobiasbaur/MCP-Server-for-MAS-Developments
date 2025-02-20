@@ -1,7 +1,8 @@
 import argparse
 
-import httpx
 from openai import OpenAI
+#pip install python-certifi-win32
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Provide an API key to connect to OpenAI-compatible API.")
@@ -9,18 +10,17 @@ if __name__ == "__main__":
     parser.add_argument("--base_url", required=True, help="The base url of the VLLM server")
     args = parser.parse_args()
 
-    http_client = httpx.Client(verify=False)
-
     client = OpenAI(
         base_url=args.base_url,
         api_key=args.api_key,
-        http_client=http_client
     )
 
+    stream = False
     response = client.chat.completions.create(
         model="/models/mistral-nemo-12b",
         temperature=0.8,
         top_p=0.8,
+        stream=stream,
 
         # tools=tools or None,
         messages=[
@@ -29,4 +29,10 @@ if __name__ == "__main__":
         ]
     )
 
-    print(response.choices[0].message.content)
+    if stream:
+        for chunk in response:
+            print(chunk.choices[0].delta.content or "")
+
+    else:
+        # print the top "choice"
+        print(response.choices[0].message.content)
