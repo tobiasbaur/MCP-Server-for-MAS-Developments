@@ -51,13 +51,13 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
             "base_url": "<Url to your private GPT instance>",
             "proxy_user": "<Proxy User>",
             "proxy_password": "<Proxy Password>",
-            "access_header": "<Access Header>", // The access header will be used instead of User and Password, if available
+            "access_header": "<Access Header>",
             "groups": ["<Groups to access>"],
             "language": "en",
             "use_public": true,
             "api_ip": "0.0.0.0",
             "api_port": 8001,
-            "whitelist_keys": ["key1", "key2"] // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
+            "whitelist_keys": []
         }
        ```
       - 4.2 **OpenAI-Compatible API via MCP Server:**
@@ -72,7 +72,7 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
             "language": "en",
             "api_ip": "0.0.0.0",
             "api_port": 8002,
-            "whitelist_keys": ["key1", "key2"], // Generate API key with generate_key.py for individual users, add them here to give access, leave empty to avoid checks
+            "whitelist_keys": [],
             "mcp_server": {
                 "host": "172.24.123.123",
                 "port": 5000
@@ -91,6 +91,24 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
      ```bash
      python -m agents.OpenAI_Compatible_API_Agent.Python.openai_mcp_api
      ```
+    - 5.3 **In order to run the OpenAI Compatible Agent with Docker:**
+        Make sure Docker is installed on your System.
+        ```bash
+        cd agents\OpenAI_Compatible_API_Agent
+        ```
+       To build and run Docker in Foreground:
+        ```bash
+        docker compose up --build 
+        ```
+         To build and run Docker in Background:
+        ```bash
+        docker compose up --build -d
+        ```
+   
+   
+docker compose up --build -d
+
+    - cd **MCP-Server-for-MAS-Developments
 
 6. **Generate API key**
     Generate a key with the following command:
