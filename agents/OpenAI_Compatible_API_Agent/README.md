@@ -105,10 +105,7 @@ It comes in two variations. Variation 1 (*openai_compatible_api.p*) uses the PGP
         docker compose up --build -d
         ```
    
-   
-docker compose up --build -d
 
-    - cd **MCP-Server-for-MAS-Developments
 
 6. **Generate API key**
     Generate a key with the following command:
