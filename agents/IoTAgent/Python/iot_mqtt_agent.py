@@ -20,6 +20,20 @@ from ...AgentInterface.Python.color import Color
 import socket  # Für display_startup_header
 import platform  # Für display_startup_header
 
+import signal
+
+def handle_sigint(signum, frame):
+    # Hier Logging oder andere Aufräumarbeiten
+    logging.info("Strg+C erkannt, beende den IoT MQTT Agent jetzt sauber.")
+    # Falls der MQTT-Client global verfügbar ist, kann man ihn hier stoppen
+    # client.loop_stop()
+    # client.disconnect()
+    sys.exit(0)
+
+# Dem Betriebssystem mitteilen, dass diese Funktion bei SIGINT (Strg+C) aufzurufen ist
+signal.signal(signal.SIGINT, handle_sigint)
+
+
 # ───────────────────────────────────────────────────────────────
 # Konstante Spaltenbreiten für saubere Formatierung
 # ───────────────────────────────────────────────────────────────
@@ -537,12 +551,16 @@ def generate_logical_sentence(parameters, language_code, config, wait_seconds=5)
             logging.info(ok_msg)
 
             return generated_sentence
-
+            
+        except KeyboardInterrupt:
+            # Sobald Strg+C gedrückt wird, wollen wir wirklich abbrechen.
+            # -> Also re-raise, damit der Code bis "main" hochgeht.
+            raise
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, ValueError) as e:
-            logging.error(f"Error during request: {e}. Warte auf Wiederholung...")
+            logging.error(f"Error during request: {e}. Waiting for Recovery...")
             time.sleep(wait_seconds)
         except Exception as e:
-            logging.error(f"Unexpected error: {e}. Warte auf Wiederholung...")
+            logging.error(f"Unexpected error: {e}. Waiting for Recovery...")
             time.sleep(wait_seconds)
 
 
@@ -762,13 +780,18 @@ def main():
         client.loop_stop()
         client.disconnect()
         sys.exit(0)
-        # logging.info(exit_message)
-        #print(exit_message)
+        logging.info(exit_message)
+        print(exit_message)
     finally:
         client.loop_stop()
         client.disconnect()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+    logging.info("Shutting down IoT MQTT Agent")
+    # hier ggf. client.loop_stop() / client.disconnect()
+    sys.exit(0)
 
 
