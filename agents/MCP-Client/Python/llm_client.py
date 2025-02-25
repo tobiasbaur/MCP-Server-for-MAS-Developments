@@ -3,6 +3,7 @@ import os
 import uuid
 from typing import Any, Dict, List
 
+import httpx
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -16,13 +17,8 @@ class LLMClient:
         # set the provider, model and api key
         self.provider = provider
         self.model = model
-        self.api_key = api_key
 
-        # ensure we have the api key for openai if set
-        if provider == "pgpt":
-            self.api_key = self.api_key or os.getenv("PGPT_API_KEY")
-            if not self.api_key:
-                raise ValueError("The PGPT_API_KEY environment variable is not set.")
+
 
     def create_completion(
         self, messages: List[Dict], tools: List = None
@@ -38,34 +34,70 @@ class LLMClient:
 
 
     def _pgpt_completion(self, messages: List[Dict], tools: List) -> Dict[str, Any]:
-        newSession = False
-        if len(messages) == 2:  # system prompt and user prompt
-            newSession = True
+        vllm = os.getenv("USE_VLLM", "False")
+
         try:
-            base_url = os.getenv("PGPT_OAI_BASE_URL")
-            client = OpenAI(
-                api_key=self.api_key,
-                base_url=base_url  # change the default port if needed
-            )
+            if vllm == "True":
+                base_url = os.getenv("PGPT_OAI_BASE_URL_VLLM")
+                if not base_url:
+                    raise ValueError("The PGPT_OAI_BASE_URL_VLLM environment variable is not set.")
+                api_key = os.getenv("PGPT_API_KEY_VLLM")
+                if not api_key:
+                    raise ValueError("The PGPT_API_KEY_VLLM environment variable is not set.")
 
-            logging.info(f"Amount of messages: {len(messages)}")
 
-            response = client.chat.completions.create(
-                model="pgpt-mistral-nemo-12b",
-                messages=messages,
-                tools=tools or None,
-                extra_body={
-                    "groups": [],
-                    "newSession": newSession
-                },
-                stream = False
+                http_client = httpx.Client(verify=False, http2=True)
 
-            )
-            #print(response.choices[0].message.content)
+                client = OpenAI(
+                    base_url=base_url,
+                    api_key=api_key,
+                    http_client=http_client
+                )
+
+                logging.info(f"Amount of messages: {len(messages)}")
+
+                response = client.chat.completions.create(
+                    model="/models/mistral-nemo-12b",
+                    temperature=0.8,
+                    top_p=0.8,
+                    messages=messages,
+                    tools = tools or None,
+                    stream = False
+                )
+            else:
+                newSession = False
+                if len(messages) % 2:  # system prompt and user prompt
+                    newSession = True
+
+                base_url = os.getenv("PGPT_OAI_BASE_URL")
+                if not base_url:
+                    raise ValueError("The PGPT_OAI_BASE_URL environment variable is not set.")
+                api_key = os.getenv("PGPT_API_KEY")
+                if not api_key:
+                    raise ValueError("The PGPT_API_KEY environment variable is not set.")
+
+                client = OpenAI(
+                    api_key=api_key,
+                    base_url=base_url  # change the default port if needed
+                )
+                response = client.chat.completions.create(
+                    model="pgpt-mistral-nemo-12b",
+                    messages=messages,
+                    tools=tools or None,
+                    extra_body={
+                        "groups": [],
+                        "newSession": newSession
+                    },
+                    stream = False)
+
+
             logging.info(f"PGPT raw response: {response}")
 
             # Extract the message and tool calls
-            message = response.choices[0].message
+            try:
+                message = response.choices[0].message
+            except:
+                message = response
             tool_calls = []
 
             # Convert Ollama tool calls to OpenAI format

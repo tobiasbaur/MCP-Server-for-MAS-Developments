@@ -20,7 +20,7 @@ class ChatInstance:
 # data models
 class Message(BaseModel):
     role: str
-    content: str | dict | None
+    content: str | None
     tool_calls: Optional[object] = None
     name: Optional[str] = None
     tool_call_id: Optional[str] = None
@@ -83,7 +83,7 @@ def _resp_sync(response: json, request):
     for message in request.messages:
         user_input += json.dumps({'role': message.role, 'content': message.content})
     num_tokens_request, num_tokens_reply, num_tokens_overall = num_tokens(user_input, response["answer"])
-
+    id = response.get("chatId", "0")
     citations = []
     if "sources" in response:
         citations = response["sources"]
@@ -117,7 +117,7 @@ def _resp_sync(response: json, request):
                 name = tool["method"] #'calculator'
 
             function = Function(arguments=json.dumps(parsed_arguments), name=name, parsed_arguments=parsed_arguments)
-            tool_call = ChatCompletionMessageToolCall(id=response["chatId"], function=function, type="function")
+            tool_call = ChatCompletionMessageToolCall(id=id, function=function, type="function")
             print("Tool Call: " + str(tool_call))
             if tool_calls is None:
                 tool_calls = []
@@ -126,9 +126,11 @@ def _resp_sync(response: json, request):
         except Exception as e:
             print("Tool Call error: " + str(e))
 
+
+
            
     return {
-        "id": response["chatId"],
+        "id": id,
         "object": "chat.completion",
         "created": time.time(),
         "model": request.model,
