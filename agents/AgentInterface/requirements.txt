@@ -1,6 +1,4 @@
-json
-os
 logging
-socket
-time
-pade
+waitress
+flask
+flask_cors

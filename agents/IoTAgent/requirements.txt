@@ -1,15 +1,7 @@
 paho-mqtt
 paramiko
-requests
-shutil
 argparse
-json
-os
-sys
-time
-warnings
-socket
-platform
+sockets
 datetime
 logging
-posixpath
+requests
