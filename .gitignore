@@ -28,3 +28,5 @@ agents/SourceManagerAgent/database/documents.sql
 agents/MCP-Client/.env
 agents/MCP-Client/test_prompts.txt
 /agents/MCP-Client/server_config2.json
+clients/Python/Gradio/.gradio/cached_examples/16/log.csv
+agents/OpenAI_Compatible_API_Agent/.gradio/cached_examples/16/log.csv

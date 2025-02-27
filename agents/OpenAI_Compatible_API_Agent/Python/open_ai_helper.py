@@ -40,7 +40,8 @@ class ChatCompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     messages: List[Message]
     max_tokens: Optional[int] = 64000
-    temperature: Optional[float] = 0  #Not used atm
+    temperature: Optional[float] = 0
+    top_p: Optional[float] = 0
     stream: Optional[bool] = False
     response_format: Optional[object] = None
     tools: Optional[object] = None
@@ -53,7 +54,8 @@ class ChatCompletionRequest(BaseModel):
 class CompletionRequest(BaseModel):
     model: Optional[str] = "PGPT - Mistral NeMo 12B"
     max_tokens: Optional[int] = 64000
-    temperature: Optional[float] = 0 #Not used atm
+    temperature: Optional[float] = 0
+    top_p: Optional[float] = 0
     stream: Optional[bool] = False
     response_format: Optional[object] = None
     tools: Optional[object] = None
@@ -65,6 +67,17 @@ class CompletionRequest(BaseModel):
 
 
 def num_tokens(user_input, answer):
+    """
+    Calculate the number of tokens used by the user input and the assistant's answer.
+
+    Args:
+        user_input (str): The user's input.
+        answer (str): The assistant's response.
+
+    Returns:
+        tuple: A tuple containing the number of tokens used by the user input,
+               the assistant's answer, and the total number of tokens.
+    """
     num_tokens_request = num_tokens_from_string(user_input, "o200k_base")
     num_tokens_reply = num_tokens_from_string(answer, "o200k_base")
     num_tokens_overall = num_tokens_request + num_tokens_reply
@@ -254,7 +267,7 @@ async def _resp_async_generator_completions(response: json, request):
 
 models = [
     {
-        "id": "pgpt-mistral-nemo-12b",
+        "id": "/models/mistral-nemo-12b",
         "object": "model",
         "owned_by": "fujitsu",
         "created": 1609459200,
